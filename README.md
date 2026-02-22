@@ -1,0 +1,1 @@
+# SkyLink\nMonorepo for Skylink backend and Android client
