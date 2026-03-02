@@ -1,16 +1,12 @@
 package com.skylink.backend
 
+import com.skylink.backend.config.AppDataSourceProperties
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication
-import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
 
-@SpringBootApplication(
-    exclude = [
-        DataSourceAutoConfiguration::class,
-        HibernateJpaAutoConfiguration::class
-    ]
-)
+@SpringBootApplication
+@EnableConfigurationProperties(AppDataSourceProperties::class)
 class SkylinkBackendApplication
 
 fun main(args: Array<String>) {

@@ -1,0 +1,43 @@
+#####################################
+# Global / Root ignores
+#####################################
+
+# IntelliJ / IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+local.env
+
+#####################################
+# Backend (Spring Boot / Gradle)
+#####################################
+
+backend/.gradle/
+backend/build/
+backend/out/
+backend/.kotlin/
+
+#####################################
+# Android (future)
+#####################################
+
+android/.gradle/
+android/build/
+android/local.properties
+android/.cxx/
+
+#####################################
+# Logs
+#####################################
+
+*.log
