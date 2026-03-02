@@ -1,0 +1,6 @@
+package com.skylink.backend.model.enums
+
+enum class DeepSkyObjectClass {
+    OPEN_CLUSTER, GLOBULAR_CLUSTER, SPIRAL_GALAXY, ELLIPTICAL_GALAXY,
+    IRREGULAR_GALAXY, PLANETARY_NEBULA, DIFFUSE_NEBULA
+}
