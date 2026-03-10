@@ -1,10 +1,13 @@
 package com.skylink.backend.dto.celestial
 
-data class SpaceObjectSummary(
+import java.time.Instant
+
+data class PlanetResponse(
     val id: Long,
     val displayName: String,
     val magnitude: Double?,
-    val objectType: String,
     val raDeg: Double,
-    val decDeg: Double
+    val decDeg: Double,
+    val orbitalModel: String,
+    val lastComputed: Instant
 )
