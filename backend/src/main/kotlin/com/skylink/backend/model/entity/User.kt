@@ -3,6 +3,8 @@ package com.skylink.backend.model.entity
 import com.skylink.backend.model.enums.UserRole
 import jakarta.persistence.*
 import java.time.Instant
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "\"Users\"")
@@ -21,9 +23,11 @@ data class User(
     var passwordHash: String,
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     var role: UserRole = UserRole.OBSERVER,
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "settings", columnDefinition = "jsonb", nullable = false)
     var settings: String = "{}",
 
