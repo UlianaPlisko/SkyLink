@@ -3,6 +3,7 @@ package com.skylink.backend.service
 import com.skylink.backend.dto.auth.*
 import com.skylink.backend.model.entity.User
 import com.skylink.backend.repository.UserRepository
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -37,10 +38,10 @@ class AuthService(
     override fun login(request: LoginRequest): AuthResponse {
 
         val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found") }
+            .orElseThrow { BadCredentialsException("User not found") }
 
         if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-            throw RuntimeException("Invalid password")
+            throw BadCredentialsException("Invalid password")
         }
 
         val token = jwtService.generateToken(user.email)
