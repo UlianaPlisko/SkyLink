@@ -1,8 +1,9 @@
 package com.skylink.backend.dto.auth
 
 import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.*
 import jakarta.validation.constraints.Size
+import com.skylink.backend.model.enums.UserRole
 
 data class RegisterRequest(
     @field:NotBlank(message = "Email is required")
@@ -15,5 +16,8 @@ data class RegisterRequest(
 
     @field:NotBlank(message = "Password is required")
     @field:Size(min = 8, message = "Password must be at least 8 characters")
-    val password: String
+    val password: String,
+
+    @field:NotNull(message = "Please, choose your role")
+    val role: UserRole
 )
