@@ -6,5 +6,6 @@ data class SpaceObjectSummary(
     val magnitude: Double?,
     val objectType: String,
     val raDeg: Double,
-    val decDeg: Double
+    val decDeg: Double,
+    val description: String?
 )

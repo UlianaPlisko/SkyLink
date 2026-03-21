@@ -3,6 +3,8 @@ package com.skylink.backend.model.entity
 import com.skylink.backend.model.enums.EventSource
 import com.skylink.backend.model.enums.EventType
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
@@ -19,6 +21,7 @@ data class Event(
     var description: String? = null,
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "event_type", nullable = false)
     val eventType: EventType,
 
@@ -29,20 +32,22 @@ data class Event(
     val endAt: Instant? = null,
 
     @Column(name = "visibility_geom", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var visibilityGeom: String? = null,
 
     @Column(name = "location_geom", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var locationGeom: String? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "creator_id", nullable = false)
-    val creator: User,
+    @Column(name = "creator_id", nullable = false)
+    val creatorId: Long,
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     val source: EventSource = EventSource.USER,
 
     @Column(name = "metadata", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     var metadata: String = "{}",
 
     @Column(name = "chat_room_id")

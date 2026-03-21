@@ -182,7 +182,8 @@ class CelestialService(
         magnitude = magnitude,
         objectType = objectType.name,  // Enum to String
         raDeg = raDeg ?: 0.0,
-        decDeg = decDeg ?: 0.0
+        decDeg = decDeg ?: 0.0,
+        description = description
     )
 
     /**
