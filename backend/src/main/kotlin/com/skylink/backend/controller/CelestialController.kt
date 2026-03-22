@@ -25,10 +25,6 @@ class CelestialController(
         return celestialService.getBrightStars(maxMagnitude)
     }
 
-    /**
-     * Retrieves detailed information for any space object (star, planet, deep sky object).
-     * Returns the appropriate DTO based on the object's type.
-     */
     @GetMapping("/space-objects/{id}")
     fun getSpaceObjectDetail(@PathVariable id: Long): ResponseEntity<Any> {
         val detail = celestialService.getSpaceObjectDetail(id)
@@ -43,6 +39,32 @@ class CelestialController(
     @GetMapping("/constellations/{id}")
     fun getConstellationDetail(@PathVariable id: Long): ResponseEntity<ConstellationDetailResponse> {
         val detail = celestialService.getConstellationDetail(id)
+        return if (detail != null) ResponseEntity.ok(detail) else ResponseEntity.notFound().build()
+    }
+
+    @GetMapping("/cultures")
+    fun getAllCultures(): List<ConstellationCultureResponse> {
+        return celestialService.getAllCultures()
+    }
+
+    @PutMapping("/cultures/{id}/current")
+    fun setCurrentCulture(@PathVariable id: Long): ResponseEntity<Void> {
+        val success = celestialService.setCurrentCulture(id)
+        return if (success) {
+            ResponseEntity.ok().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @GetMapping("/constellations/current")
+    fun getAllConstellationsForCurrentCulture(): List<ConstellationResponse> {
+        return celestialService.getAllConstellationsForCurrentCulture()
+    }
+
+    @GetMapping("/constellations/current/{id}")
+    fun getConstellationDetailForCurrentCulture(@PathVariable id: Long): ResponseEntity<ConstellationDetailResponse> {
+        val detail = celestialService.getConstellationDetailForCurrentCulture(id)
         return if (detail != null) ResponseEntity.ok(detail) else ResponseEntity.notFound().build()
     }
 }

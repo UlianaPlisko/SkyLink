@@ -27,4 +27,24 @@ interface CelestialServiceInterface {
 
     /** Constellation detail with its stars (this is the connection you asked for) */
     fun getConstellationDetail(id: Long): ConstellationDetailResponse?
+
+    /**
+     * Returns ALL constellation cultures (Western, Chinese, etc.) with their current status.
+     */
+    fun getAllCultures(): List<ConstellationCultureResponse>
+
+    /**
+     * Switches the active constellation culture.
+     */
+    fun setCurrentCulture(cultureId: Long): Boolean
+
+    /**
+     * Returns constellations ONLY for the currently active culture.
+     */
+    fun getAllConstellationsForCurrentCulture(): List<ConstellationResponse>
+
+    /**
+     * Returns detailed constellation + stars ONLY if its culture is the current active one.
+     */
+    fun getConstellationDetailForCurrentCulture(id: Long): ConstellationDetailResponse?
 }

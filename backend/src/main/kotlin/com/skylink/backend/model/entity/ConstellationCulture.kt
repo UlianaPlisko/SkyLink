@@ -1,6 +1,5 @@
 package com.skylink.backend.model.entity
 
-import com.skylink.backend.model.enums.ConstellationRegion
 import jakarta.persistence.*
 
 @Entity
@@ -13,9 +12,8 @@ data class ConstellationCulture(
     @Column(nullable = false)
     val name: String,
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val region: ConstellationRegion,
+    val region: String,
 
     @Column(columnDefinition = "TEXT")
     val description: String? = null,

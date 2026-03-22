@@ -27,7 +27,8 @@ class CelestialService(
     private val planetDataRepository: PlanetDataRepository,
     private val deepSkyObjectDataRepository: DeepSkyObjectDataRepository,
     private val constellationRepository: ConstellationRepository,
-    private val constStarConnectionRepository: ConstStarConnectionRepository
+    private val constStarConnectionRepository: ConstStarConnectionRepository,
+    private val constellationCultureRepository: ConstellationCultureRepository
 ) : CelestialServiceInterface {
 
     /**
@@ -165,7 +166,45 @@ class CelestialService(
             id = constellation.id,
             name = constellation.name,
             cultureName = constellation.culture.name,
-            region = constellation.culture.region.name,
+            region = constellation.culture.region,
+            description = constellation.description,
+            stars = stars
+        )
+    }
+
+    @Transactional(readOnly = true)
+    override fun getAllCultures(): List<ConstellationCultureResponse> {
+        return constellationCultureRepository.findAll().map { it.toResponse() }
+    }
+
+    @Transactional
+    override fun setCurrentCulture(cultureId: Long): Boolean {
+        if (!constellationCultureRepository.existsById(cultureId)) {
+            return false
+        }
+        constellationCultureRepository.setAllToNotCurrent()
+        constellationCultureRepository.setCurrent(cultureId)
+        return true
+    }
+
+    @Transactional(readOnly = true)
+    override fun getAllConstellationsForCurrentCulture(): List<ConstellationResponse> {
+        return constellationRepository.findAllWithCurrentCulture().map { it.toResponse() }
+    }
+
+    @Transactional(readOnly = true)
+    override fun getConstellationDetailForCurrentCulture(id: Long): ConstellationDetailResponse? {
+        val constellation = constellationRepository.findByIdWithCurrentCulture(id).orElse(null) ?: return null
+
+        val connections = constStarConnectionRepository.findByConstellationId(constellation.id)
+        val starIds = connections.flatMap { listOf(it.id.star1Id, it.id.star2Id) }.toSet()
+        val stars = spaceObjectRepository.findAllById(starIds).map { it.toSummary() }
+
+        return ConstellationDetailResponse(
+            id = constellation.id,
+            name = constellation.name,
+            cultureName = constellation.culture.name,
+            region = constellation.culture.region,
             description = constellation.description,
             stars = stars
         )
@@ -193,7 +232,15 @@ class CelestialService(
         id = id,
         name = name,
         cultureName = culture.name,
-        region = culture.region.name,
+        region = culture.region,
         description = description
+    )
+
+    private fun ConstellationCulture.toResponse() = ConstellationCultureResponse(
+        id = id,
+        name = name,
+        region = region,
+        description = description,
+        isCurrent = isCurrent
     )
 }
