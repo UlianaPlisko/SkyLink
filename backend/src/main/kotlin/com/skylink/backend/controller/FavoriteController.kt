@@ -3,7 +3,7 @@ package com.skylink.backend.controller
 import com.skylink.backend.dto.favorite.FavoriteRequest
 import com.skylink.backend.dto.favorite.FavoriteResponse
 import com.skylink.backend.service.FavoriteService
-import com.skylink.backend.service.UserService
+import com.skylink.backend.service.user.UserProfileService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/favorites")
 class FavoriteController(
     private val favoriteService: FavoriteService,
-    private val userService: UserService
+    private val userService: UserProfileService
 ) {
 
     @GetMapping

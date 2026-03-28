@@ -6,13 +6,14 @@ import com.skylink.backend.dto.favorite.FavoriteResponse
 import com.skylink.backend.model.entity.Favorite
 import com.skylink.backend.repository.FavoriteRepository
 import com.skylink.backend.repository.SpaceObjectRepository
+import com.skylink.backend.service.user.UserProfileService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class FavoriteService(
     private val favoriteRepository: FavoriteRepository,
-    private val userService: UserService,
+    private val userService: UserProfileService,
     private val spaceObjectRepository: SpaceObjectRepository
 ) {
 
