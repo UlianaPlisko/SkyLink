@@ -20,4 +20,16 @@ class AuthController(
     fun login(@Valid @RequestBody request: LoginRequest): AuthResponse {
         return authService.login(request)
     }
+
+    @PostMapping("/google")
+    fun googleAuth(@RequestBody request: GoogleAuthRequest): GoogleCallbackResponse {
+        return authService.googleAuth(request)
+    }
+
+    @PostMapping("/google/complete")
+    fun completeGoogle(
+        @RequestBody request: CompleteGoogleRequest
+    ): AuthResponse {
+        return authService.completeGoogleRegistration(request)
+    }
 }

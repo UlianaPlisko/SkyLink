@@ -1,8 +1,9 @@
 package com.skylink.backend.model.entity
 
+import com.skylink.backend.model.enums.AuthProvider
 import com.skylink.backend.model.enums.UserRole
 import jakarta.persistence.*
-import java.time.Instant
+import java.time.Instant  // ← java.time, не kotlin.time
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
@@ -19,8 +20,10 @@ data class User(
     @Column(name = "display_name", nullable = false)
     var displayName: String,
 
-    @Column(name = "password_hash", nullable = false)
-    var passwordHash: String,
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    var provider: AuthProvider = AuthProvider.LOCAL,
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -35,5 +38,8 @@ data class User(
     val createdAt: Instant = Instant.now(),
 
     @Column(name = "last_used_at")
-    var lastUsedAt: Instant? = null
+    var lastUsedAt: Instant? = null,
+
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var localCredential: UserCredentials? = null
 )
