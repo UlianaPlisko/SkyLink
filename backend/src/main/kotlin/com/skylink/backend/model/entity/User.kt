@@ -41,5 +41,6 @@ data class User(
     var lastUsedAt: Instant? = null,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var localCredential: UserCredentials? = null
+    var localCredential: UserCredentials? = null,
+
 )

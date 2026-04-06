@@ -9,5 +9,6 @@ data class UserProfileResponse(
     val displayName: String,
     val role: UserRole,
     val createdAt: Instant,
-    val lastUsedAt: Instant?
+    val lastUsedAt: Instant?,
+    val pfpUrl: String?
 )
