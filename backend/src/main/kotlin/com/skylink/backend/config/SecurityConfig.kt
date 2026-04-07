@@ -35,6 +35,7 @@ class SecurityConfig {
                         "/swagger-ui.html",
                         "/v3/api-docs/**"
                     ).permitAll()
+                    .requestMatchers("/ws-chat/**", "/ws-chat").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)

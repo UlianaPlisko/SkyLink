@@ -2,6 +2,8 @@ package com.skylink.backend.model.entity
 
 import com.skylink.backend.model.enums.ChatRoomType
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
@@ -15,10 +17,12 @@ data class ChatRoom(
     var name: String,
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    val type: ChatRoomType,
+    var type: ChatRoomType,
 
     @Column(name = "region_geom", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     var regionGeom: String? = null,
 
     @Column(name = "event_id")

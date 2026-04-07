@@ -25,8 +25,6 @@ class OpenApiConfig {
                     .contact(
                         Contact()
                             .name("SkyLink Team")
-                            .email("your-email@example.com")
-                            .url("https://your-site.com")
                     )
                     .license(
                         License()
