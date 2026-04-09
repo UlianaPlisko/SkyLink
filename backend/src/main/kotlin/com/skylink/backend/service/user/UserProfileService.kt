@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
-import java.time.Instant
 
 data class PfpFile(
     val bytes: ByteArray,
@@ -114,13 +113,9 @@ class UserProfileService(
     }
 
     @Transactional(readOnly = true)
-    fun getPfp(email: String): PfpFile {
+    fun getPfp(email: String): PfpFile? {
         val user = getByEmail(email)
-
-        val pfp = userPfpRepository.findById(user.id)
-            .orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "User has no pfp")
-            }
+        val pfp = userPfpRepository.findById(user.id).orElse(null) ?: return null
 
         return PfpFile(
             bytes = pfp.data,
@@ -129,12 +124,12 @@ class UserProfileService(
     }
 
     @Transactional
-    fun deletePfp(email: String) {
+    fun deletePfp(email: String): Boolean {
         val user = getByEmail(email)
+        val pfp = userPfpRepository.findById(user.id).orElse(null) ?: return false
 
-        if (userPfpRepository.existsById(user.id)) {
-            userPfpRepository.deleteById(user.id)
-        }
+        userPfpRepository.delete(pfp)
+        return true
     }
 
     private fun toUserProfileResponse(user: User): UserProfileResponse {

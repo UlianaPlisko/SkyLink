@@ -66,6 +66,7 @@ class UserController(
     @GetMapping("/pfp")
     fun getPfp(principal: Principal): ResponseEntity<ByteArray> {
         val pfp = profileService.getPfp(principal.name)
+            ?: return ResponseEntity.notFound().build()
 
         return ResponseEntity
             .ok()
@@ -76,8 +77,11 @@ class UserController(
 
     @Operation(summary = "Delete profile picture")
     @DeleteMapping("/pfp")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deletePfp(principal: Principal) {
-        profileService.deletePfp(principal.name)
+    fun deletePfp(principal: Principal): ResponseEntity<Void> {
+        return if (profileService.deletePfp(principal.name)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 }

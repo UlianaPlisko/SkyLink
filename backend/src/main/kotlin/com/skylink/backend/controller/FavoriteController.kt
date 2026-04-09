@@ -7,11 +7,10 @@ import com.skylink.backend.service.user.UserProfileService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import java.security.Principal
 
 @Tag(name = "Favorites", description = "User favorites management")
-
 @RestController
 @RequestMapping("/api/favorites")
 class FavoriteController(
@@ -21,8 +20,8 @@ class FavoriteController(
 
     @Operation(summary = "Get user favorites")
     @GetMapping
-    fun getFavorites(@AuthenticationPrincipal email: String): List<FavoriteResponse> {
-        val user = userService.getByEmail(email)
+    fun getFavorites(principal: Principal): List<FavoriteResponse> {
+        val user = userService.getByEmail(principal.name)
         return favoriteService.getUserFavorites(user.id)
     }
 
@@ -30,9 +29,9 @@ class FavoriteController(
     @PostMapping
     fun addFavorite(
         @RequestBody request: FavoriteRequest,
-        @AuthenticationPrincipal email: String
+        principal: Principal
     ): FavoriteResponse {
-        val user = userService.getByEmail(email)
+        val user = userService.getByEmail(principal.name)
         return favoriteService.addFavorite(user.id, request)
     }
 
@@ -40,10 +39,14 @@ class FavoriteController(
     @DeleteMapping("/{spaceObjectId}")
     fun removeFavorite(
         @PathVariable spaceObjectId: Long,
-        @AuthenticationPrincipal email: String
-    ): ResponseEntity<String> {
-        val user = userService.getByEmail(email)
-        favoriteService.removeFavorite(user.id, spaceObjectId)
-        return ResponseEntity.ok("Removed from favorites")
+        principal: Principal
+    ): ResponseEntity<Void> {
+        val user = userService.getByEmail(principal.name)
+
+        return if (favoriteService.removeFavorite(user.id, spaceObjectId)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
     }
 }

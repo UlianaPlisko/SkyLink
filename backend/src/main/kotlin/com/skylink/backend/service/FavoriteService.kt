@@ -7,8 +7,10 @@ import com.skylink.backend.model.entity.Favorite
 import com.skylink.backend.repository.FavoriteRepository
 import com.skylink.backend.repository.SpaceObjectRepository
 import com.skylink.backend.service.user.UserProfileService
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class FavoriteService(
@@ -25,7 +27,6 @@ class FavoriteService(
 
     @Transactional
     fun addFavorite(userId: Long, request: FavoriteRequest): FavoriteResponse {
-
         val existing = favoriteRepository
             .findByUserIdAndSpaceObjectId(userId, request.spaceObjectId)
 
@@ -34,7 +35,9 @@ class FavoriteService(
         val user = userService.getById(userId)
 
         val spaceObject = spaceObjectRepository.findById(request.spaceObjectId)
-            .orElseThrow { IllegalArgumentException("SpaceObject not found") }
+            .orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Space object not found")
+            }
 
         val favorite = Favorite(
             user = user,
@@ -47,10 +50,13 @@ class FavoriteService(
     }
 
     @Transactional
-    fun removeFavorite(userId: Long, spaceObjectId: Long) {
-        favoriteRepository.deleteByUserIdAndSpaceObjectId(userId, spaceObjectId)
-    }
+    fun removeFavorite(userId: Long, spaceObjectId: Long): Boolean {
+        val favorite = favoriteRepository.findByUserIdAndSpaceObjectId(userId, spaceObjectId)
+            .orElse(null) ?: return false
 
+        favoriteRepository.delete(favorite)
+        return true
+    }
 
     private fun Favorite.toResponse(): FavoriteResponse {
         return FavoriteResponse(
