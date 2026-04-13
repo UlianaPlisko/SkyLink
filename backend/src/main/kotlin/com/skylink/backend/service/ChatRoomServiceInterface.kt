@@ -13,7 +13,7 @@ interface ChatRoomServiceInterface {
     fun getAllRooms(type: ChatRoomType? = null): List<ChatRoomResponse>
     fun getRoomById(roomId: Long): ChatRoomResponse
     fun updateRoom(roomId: Long, request: UpdateChatRoomRequest): ChatRoomResponse
-    fun deleteRoom(roomId: Long)
+    fun deleteRoom(currentUserEmail: String, roomId: Long)
 
     fun subscribeCurrentUser(currentUserEmail: String, roomId: Long): ChatSubscriptionResponse
     fun unsubscribeCurrentUser(currentUserEmail: String, roomId: Long)

@@ -19,6 +19,7 @@ import com.skylink.backend.repository.UserRepository
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.security.access.AccessDeniedException
 
 @Service
 class ChatRoomService(
@@ -112,8 +113,14 @@ class ChatRoomService(
     }
 
     @Transactional
-    override fun deleteRoom(roomId: Long) {
+    override fun deleteRoom(currentUserEmail: String, roomId: Long) {
         val room = findRoomOrThrow(roomId)
+        val currentUser = findUserByEmailOrThrow(currentUserEmail)
+
+        if (room.createdBy != currentUser.id) {
+            throw AccessDeniedException("You are not allowed to delete this room")
+        }
+
         chatRoomRepository.delete(room)
     }
 

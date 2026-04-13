@@ -74,9 +74,10 @@ class ChatRoomController(
     @DeleteMapping("/{roomId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteRoom(
+        authentication: Authentication,
         @PathVariable roomId: Long
     ) {
-        chatRoomService.deleteRoom(roomId)
+        chatRoomService.deleteRoom(authentication.name, roomId)
     }
 
     @Operation(summary = "Subscribe current user to a chat room")
