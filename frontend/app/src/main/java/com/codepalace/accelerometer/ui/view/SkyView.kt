@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import com.codepalace.accelerometer.data.model.Star
@@ -17,7 +18,7 @@ class SkyView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
+        color = Color.argb(220, 210, 210, 210)
         textSize = 30f
         textAlign = Paint.Align.CENTER
     }
@@ -34,16 +35,16 @@ class SkyView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
+    // Keeps label side stable for each star so labels do not jump around
+    // 0=above, 1=right, 2=left, 3=below, 4=upper-right, 5=upper-left
+    private val labelAnchorCache = mutableMapOf<String, Int>()
+
     var stars: List<Star> = emptyList()
         set(value) {
             field = value
             invalidate()
         }
 
-    /**
-     * device -> world matrix from OrientationHelper
-     * In rendering we use transpose(matrix) to get world -> device.
-     */
     var rotationMatrix: FloatArray? = null
         set(value) {
             field = value
@@ -68,9 +69,6 @@ class SkyView @JvmOverloads constructor(
             invalidate()
         }
 
-    /**
-     * Horizontal visible sky angle in degrees.
-     */
     var fovHorizontal: Float = 90f
         set(value) {
             field = value.coerceIn(30f, 120f)
@@ -96,45 +94,36 @@ class SkyView @JvmOverloads constructor(
 
         val centerX = width / 2f
         val centerY = height / 2f
-
         val aspect = height.toFloat() / width.toFloat()
+
         val fovHorizontalRad = Math.toRadians(fovHorizontal.toDouble())
         val fovVerticalRad = 2.0 * kotlin.math.atan(tan(fovHorizontalRad / 2.0) * aspect)
 
-        // Gnomonic / tangent-plane limits (your current projection)
         val gnomonicLimitX = tan(fovHorizontalRad / 2.0)
         val gnomonicLimitY = tan(fovVerticalRad / 2.0)
 
-        // Stereographic limits
         val stereoLimitX = 2.0 * tan(fovHorizontalRad / 4.0)
         val stereoLimitY = 2.0 * tan(fovVerticalRad / 4.0)
 
         drawCrosshair(canvas, centerX, centerY)
 
-        /**
-         * Compute how "table-like" the current view is.
-         *
-         * Device forward direction is -Z in device coordinates.
-         * Convert that to world coordinates using device->world matrix.
-         *
-         * forwardWorld = matrix * (0, 0, -1)
-         *              = (-m[2], -m[5], -m[8])
-         *
-         * In ENU world:
-         * z = Up
-         *
-         * If |forwardWorld.z| is near 1 => phone points almost vertical
-         * (good to keep your old tangent-plane behavior)
-         *
-         * If |forwardWorld.z| is near 0 => phone points more toward horizon
-         * (better to use stereographic to reduce edge sliding)
-         */
         val forwardWorldUp = -matrix[8].toDouble()
         val verticalLook = abs(forwardWorldUp).coerceIn(0.0, 1.0)
 
-        // 0 -> stereographic, 1 -> gnomonic
         val gnomonicWeight = smoothStep(0.65, 0.92, verticalLook)
         val stereoWeight = 1.0 - gnomonicWeight
+
+        val usedLabelRects = mutableListOf<RectF>()
+        val visibleStarRects = mutableListOf<RectF>()
+
+        data class ProjectedStar(
+            val star: Star,
+            val screenX: Float,
+            val screenY: Float,
+            val radius: Float
+        )
+
+        val projectedStars = mutableListOf<ProjectedStar>()
 
         for (star in stars) {
             val world = floatArrayOf(
@@ -149,46 +138,26 @@ class SkyView @JvmOverloads constructor(
             val yDev = device[1].toDouble()
             val zDev = device[2].toDouble()
 
-            /**
-             * Device coordinates:
-             * +X = screen right
-             * +Y = screen top
-             * +Z = out of screen toward user
-             *
-             * Looking through the phone means forward = -Z
-             */
             val forward = -zDev
             if (forward <= 0.0) continue
 
-            // -----------------------------
-            // 1) Your current projection
-            // -----------------------------
             val gnomonicX = xDev / forward
             val gnomonicY = yDev / forward
-
             val gnomonicNx = gnomonicX / gnomonicLimitX
             val gnomonicNy = gnomonicY / gnomonicLimitY
 
-            // -----------------------------
-            // 2) Stereographic projection
-            // -----------------------------
             val k = 2.0 / (1.0 + forward)
             val stereoX = xDev * k
             val stereoY = yDev * k
-
             val stereoNx = stereoX / stereoLimitX
             val stereoNy = stereoY / stereoLimitY
 
-            // If star is far outside both projections, skip it
             if ((abs(gnomonicNx) > 1.3 && abs(stereoNx) > 1.3) ||
                 (abs(gnomonicNy) > 1.3 && abs(stereoNy) > 1.3)
             ) {
                 continue
             }
 
-            // -----------------------------
-            // 3) Blend them
-            // -----------------------------
             val nx = (gnomonicNx * gnomonicWeight + stereoNx * stereoWeight).toFloat()
             val ny = (gnomonicNy * gnomonicWeight + stereoNy * stereoWeight).toFloat()
 
@@ -196,8 +165,17 @@ class SkyView @JvmOverloads constructor(
 
             val screenX = centerX + nx * centerX
             val screenY = centerY - ny * centerY
-
             val radius = starRadiusForMagnitude(star.magnitude.toFloat())
+
+            projectedStars += ProjectedStar(star, screenX, screenY, radius)
+
+            visibleStarRects += RectF(
+                screenX - radius - 8f,
+                screenY - radius - 8f,
+                screenX + radius + 8f,
+                screenY + radius + 8f
+            )
+
             starPaint.color = if (star.magnitude < 1f) {
                 Color.rgb(255, 235, 170)
             } else {
@@ -205,14 +183,135 @@ class SkyView @JvmOverloads constructor(
             }
 
             canvas.drawCircle(screenX, screenY, radius, starPaint)
+        }
 
-            if (showLabels && star.magnitude < 2.5f && star.name.isNotBlank()) {
-                textPaint.color = Color.argb(220, 210, 210, 210)
-                canvas.drawText(star.name, screenX, screenY - radius - 8f, textPaint)
+        if (showLabels) {
+            val maxLabels = 20
+            var labelsDrawn = 0
+
+            for (ps in projectedStars.sortedBy { it.star.magnitude }) {
+                if (labelsDrawn >= maxLabels) break
+
+                val star = ps.star
+                if (star.name.isBlank()) continue
+
+                val labelRect = findStableLabelPosition(
+                    text = star.name,
+                    starX = ps.screenX,
+                    starY = ps.screenY,
+                    starRadius = ps.radius,
+                    usedLabels = usedLabelRects,
+                    starRects = visibleStarRects
+                )
+
+                if (labelRect != null) {
+                    val fm = textPaint.fontMetrics
+                    val baselineY = labelRect.top - fm.top
+                    canvas.drawText(star.name, labelRect.centerX(), baselineY, textPaint)
+                    usedLabelRects += labelRect
+                    labelsDrawn++
+                }
+            }
+        }
+    }
+
+    private fun findStableLabelPosition(
+        text: String,
+        starX: Float,
+        starY: Float,
+        starRadius: Float,
+        usedLabels: List<RectF>,
+        starRects: List<RectF>
+    ): RectF? {
+        val preferredAnchor = labelAnchorCache[text] ?: preferredAnchorForStar(text)
+
+        val candidateOrder = buildList {
+            add(preferredAnchor)
+            for (i in 0..5) {
+                if (i != preferredAnchor) add(i)
             }
         }
 
-        //drawDebugText(canvas, gnomonicWeight, stereoWeight)
+        for (anchor in candidateOrder) {
+            val rect = buildLabelRect(text, starX, starY, starRadius, anchor)
+            if (!isInsideScreen(rect)) continue
+            if (usedLabels.any { RectF.intersects(it, rect) }) continue
+            if (starRects.any { RectF.intersects(it, rect) }) continue
+
+            labelAnchorCache[text] = anchor
+            return rect
+        }
+
+        return null
+    }
+
+    private fun preferredAnchorForStar(name: String): Int {
+        return (name.hashCode().absoluteValue % 6)
+    }
+
+    private fun buildLabelRect(
+        text: String,
+        starX: Float,
+        starY: Float,
+        starRadius: Float,
+        anchor: Int
+    ): RectF {
+        val paddingX = 10f
+        val paddingY = 4f
+        val margin = 10f
+
+        val textWidth = textPaint.measureText(text)
+        val fm = textPaint.fontMetrics
+        val textHeight = fm.bottom - fm.top
+
+        val boxWidth = textWidth + paddingX * 2f
+        val boxHeight = textHeight + paddingY * 2f
+
+        return when (anchor) {
+            0 -> RectF( // above
+                starX - boxWidth / 2f,
+                starY - starRadius - margin - boxHeight,
+                starX + boxWidth / 2f,
+                starY - starRadius - margin
+            )
+            1 -> RectF( // right
+                starX + starRadius + margin,
+                starY - boxHeight / 2f,
+                starX + starRadius + margin + boxWidth,
+                starY + boxHeight / 2f
+            )
+            2 -> RectF( // left
+                starX - starRadius - margin - boxWidth,
+                starY - boxHeight / 2f,
+                starX - starRadius - margin,
+                starY + boxHeight / 2f
+            )
+            3 -> RectF( // below
+                starX - boxWidth / 2f,
+                starY + starRadius + margin,
+                starX + boxWidth / 2f,
+                starY + starRadius + margin + boxHeight
+            )
+            4 -> RectF( // upper-right
+                starX + starRadius + margin,
+                starY - starRadius - margin - boxHeight,
+                starX + starRadius + margin + boxWidth,
+                starY - starRadius - margin
+            )
+            else -> RectF( // upper-left
+                starX - starRadius - margin - boxWidth,
+                starY - starRadius - margin - boxHeight,
+                starX - starRadius - margin,
+                starY - starRadius - margin
+            )
+        }
+    }
+
+    private fun isInsideScreen(rect: RectF): Boolean {
+        return rect.left >= 0f &&
+                rect.top >= 0f &&
+                rect.right <= width.toFloat() &&
+                rect.bottom <= height.toFloat()
     }
 
     private fun starRadiusForMagnitude(magnitude: Float): Float {
@@ -231,33 +330,13 @@ class SkyView @JvmOverloads constructor(
         canvas.drawLine(centerX, centerY - 20f, centerX, centerY + 20f, debugPaint)
     }
 
-    private fun drawDebugText(canvas: Canvas, gnomonicWeight: Double, stereoWeight: Double) {
-        textPaint.color = Color.argb(150, 180, 180, 180)
-        textPaint.textAlign = Paint.Align.LEFT
-        textPaint.textSize = 26f
-
-        canvas.drawText(
-            "Az ${phoneAzimuth.toInt()}°  Pitch ${phonePitch.toInt()}°  Roll ${phoneRoll.toInt()}°",
-            24f,
-            40f,
-            textPaint
-        )
-
-        canvas.drawText(
-            "G ${(gnomonicWeight * 100).toInt()}%  S ${(stereoWeight * 100).toInt()}%",
-            24f,
-            72f,
-            textPaint
-        )
-
-        textPaint.textAlign = Paint.Align.CENTER
-    }
-
     private fun drawCenteredDebug(canvas: Canvas, message: String) {
         textPaint.color = Color.argb(180, 200, 200, 200)
         textPaint.textAlign = Paint.Align.CENTER
         textPaint.textSize = 34f
         canvas.drawText(message, width / 2f, height / 2f, textPaint)
+        textPaint.textSize = 30f
+        textPaint.color = Color.argb(220, 210, 210, 210)
     }
 
     private fun multiplyTransposeMatVec(m: FloatArray, v: FloatArray): FloatArray {
@@ -273,4 +352,7 @@ class SkyView @JvmOverloads constructor(
         val t = ((x - edge0) / (edge1 - edge0)).coerceIn(0.0, 1.0)
         return t * t * (3.0 - 2.0 * t)
     }
+
+    private val Int.absoluteValue: Int
+        get() = if (this < 0) -this else this
 }

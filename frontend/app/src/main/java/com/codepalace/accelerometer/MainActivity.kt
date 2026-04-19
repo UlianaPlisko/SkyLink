@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSearch: ImageButton
     private lateinit var btnChat: ImageButton
     private lateinit var btnCalendar: ImageButton
+
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val locationPermissionLauncher =
@@ -98,6 +101,18 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                viewModel.zoomBy(detector.scaleFactor)   // live zoom while pinching
+                return true
+            }
+        })
+
+        skyView.setOnTouchListener { _, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            true
+        }
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -105,6 +120,13 @@ class MainActivity : AppCompatActivity() {
                         skyView.stars = stars
                     }
                 }
+
+                launch {
+                    viewModel.fovHorizontal.collect { newFov ->
+                        skyView.fovHorizontal = newFov
+                    }
+                }
+
                 launch {
                     viewModel.isLoading.collect { isLoading ->
                         loadingOverlay.isVisible = isLoading

@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
+import kotlin.math.log10
+
 @RequiresApi(Build.VERSION_CODES.O)
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -38,10 +40,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var currentLon = -0.1
     private var displayMaxMagnitude = 3.0
 
+    private var currentZoomLevel: Float = 1.0f          // 1.0 = default (90° FOV)
+    private val baseFovHorizontal = 90f
+    private val baseMaxMagnitude = 3.0
+
+    private val _fovHorizontal = MutableStateFlow(baseFovHorizontal)
+    val fovHorizontal: StateFlow<Float> = _fovHorizontal.asStateFlow()
+
     init {
         loadData()
+        updateZoomDependentValues()   // ensures initial values are consistent
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     private fun loadData() {
         viewModelScope.launch {
@@ -83,7 +92,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val referenceInstant = Instant.now()
 
         val projected = objects
+            .asSequence()
             .filter { it.objectType == "STAR" && it.magnitude <= displayMaxMagnitude }
+            .sortedBy { it.magnitude }
+            .take(1000)
             .map { entity ->
                 val (az, alt) = CelestialConverter.raDecToAzAlt(
                     entity.raDeg, entity.decDeg, currentLat, currentLon, referenceInstant
@@ -101,6 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     up = v.z
                 )
             }
+            .toList()
 
         _stars.value = projected
         Log.d(TAG, "✅ Projected ${projected.size} visible stars (mag ≤ $displayMaxMagnitude)")
@@ -118,6 +131,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         currentLat = lat
         currentLon = lon
 
+        viewModelScope.launch {
+            val cached = repository.getCachedObjects().first()
+            projectAndUpdateUI(cached)
+        }
+    }
+
+    private fun updateZoomDependentValues() {
+        val newFov = (baseFovHorizontal / currentZoomLevel).coerceIn(30f, 120f)
+        _fovHorizontal.value = newFov
+
+        val logValue = log10(currentZoomLevel.toDouble())
+        val newMaxMag = (baseMaxMagnitude + 3.0 * logValue).coerceIn(2.0, 5.2)
+
+        displayMaxMagnitude = newMaxMag
+    }
+
+    fun zoomBy(factor: Float) {
+        currentZoomLevel *= factor
+        currentZoomLevel = currentZoomLevel.coerceIn(0.7f, 5f)
+
+        updateZoomDependentValues()
+
+        viewModelScope.launch {
+            val cached = repository.getCachedObjects().first()
+            projectAndUpdateUI(cached)
+        }
+    }
+
+    fun zoomIn() = zoomBy(1.25f)      // slightly faster zoom
+    fun zoomOut() = zoomBy(1f / 1.25f)
+
+    fun resetZoom() {
+        currentZoomLevel = 1.0f
+        updateZoomDependentValues()
         viewModelScope.launch {
             val cached = repository.getCachedObjects().first()
             projectAndUpdateUI(cached)
