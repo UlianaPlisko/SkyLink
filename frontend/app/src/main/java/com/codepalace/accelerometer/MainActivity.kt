@@ -27,6 +27,8 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
+import android.widget.ImageButton
+import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +40,13 @@ class MainActivity : AppCompatActivity() {
 
     private var smoothedAzimuth: Float = 0f
     private var smoothedAltitude: Float = 0f
+
+    private lateinit var tvTime: TextView
+    private lateinit var tvDegrees: TextView
+    private lateinit var btnMenu: ImageButton
+    private lateinit var btnSearch: ImageButton
+    private lateinit var btnChat: ImageButton
+    private lateinit var btnCalendar: ImageButton
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val locationPermissionLauncher =
@@ -54,6 +63,31 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         skyView = findViewById(R.id.skyView)
+        tvTime = findViewById(R.id.tvTime)
+        tvDegrees = findViewById(R.id.tvDegrees)
+        btnMenu = findViewById(R.id.btnMenu)
+        btnSearch = findViewById(R.id.btnSearch)
+        btnChat = findViewById(R.id.btnChat)
+        btnCalendar = findViewById(R.id.btnCalendar)
+
+        updateCurrentTime()
+
+        btnMenu.setOnClickListener {
+            // open menu later
+        }
+
+        btnSearch.setOnClickListener {
+            // search later
+        }
+
+        btnChat.setOnClickListener {
+            // chat later
+        }
+
+        btnCalendar.setOnClickListener {
+            // calendar later
+        }
+
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -85,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             smoothedAltitude = 0.85f * smoothedAltitude + 0.15f * (-pitch)
 
             skyView.phoneAzimuth = smoothedAzimuth
-            skyView.phoneAltitude = smoothedAltitude
+            tvDegrees.text = "${smoothedAzimuth.toInt()}°"
         }
 
         orientationHelper.onMatrixChanged = { matrix ->
@@ -155,5 +189,10 @@ class MainActivity : AppCompatActivity() {
                     viewModel.updateObserverLocation(location.latitude, location.longitude)
                 }
             }
+    }
+
+    private fun updateCurrentTime() {
+        val formatter = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        tvTime.text = formatter.format(java.util.Date())
     }
 }

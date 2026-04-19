@@ -3,7 +3,11 @@ package com.codepalace.accelerometer.util
 import android.os.Build
 import androidx.annotation.RequiresApi
 import java.time.Instant
-import kotlin.math.*
+import kotlin.math.asin
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.tan
 
 data class Vec3(
     val x: Double,
@@ -12,83 +16,115 @@ data class Vec3(
 )
 
 object CelestialConverter {
+
     /**
-     * Returns Pair(azimuthDegrees, altitudeDegrees) - 0° = North, positive East
-     * IMPORTANT: call this with a fixed referenceInstant (set once when you load stars)
+     * Converts equatorial coordinates (RA/Dec) to local horizontal coordinates (Az/Alt).
+     *
+     * Returns:
+     * Pair(azimuthDegrees, altitudeDegrees)
+     *
+     * Convention:
+     * - Azimuth: 0° = North, 90° = East, 180° = South, 270° = West
+     * - Altitude: 0° = horizon, +90° = zenith
+     *
+     * IMPORTANT:
+     * use one fixed referenceInstant for the whole loaded star catalog
+     * so all stars are computed for the same sky moment.
      */
     @RequiresApi(Build.VERSION_CODES.O)
     fun raDecToAzAlt(
-        raDeg: Double,          // RA in degrees (if RA in hours => raHours*15)
+        raDeg: Double,
         decDeg: Double,
         latDeg: Double,
         lonDeg: Double,
         referenceInstant: Instant
     ): Pair<Double, Double> {
         val jd = calculateJulianDate(referenceInstant)
-        val gmst = greenwichMeanSiderealTimeDeg(jd)         // degrees
-        // LST in degrees: GMST + longitude (east positive)
-        var lst = gmst + lonDeg
-        lst = (lst % 360.0 + 360.0) % 360.0
+        val gmstDeg = greenwichMeanSiderealTimeDeg(jd)
 
-        // Hour Angle in degrees: HA = LST - RA  -> normalize to -180..180
-        var ha = lst - raDeg
-        ha = ((ha + 540.0) % 360.0) - 180.0
+        var localSiderealTimeDeg = gmstDeg + lonDeg
+        localSiderealTimeDeg = normalizeDegrees360(localSiderealTimeDeg)
 
-        // convert to radians for trig
-        val haRad = Math.toRadians(ha)
+        var hourAngleDeg = localSiderealTimeDeg - raDeg
+        hourAngleDeg = normalizeDegrees180(hourAngleDeg)
+
+        val haRad = Math.toRadians(hourAngleDeg)
         val decRad = Math.toRadians(decDeg)
         val latRad = Math.toRadians(latDeg)
 
-        // altitude
-        val sinAlt = sin(decRad) * sin(latRad) + cos(decRad) * cos(latRad) * cos(haRad)
+        val sinAlt = sin(decRad) * sin(latRad) +
+                cos(decRad) * cos(latRad) * cos(haRad)
         val altRad = asin(sinAlt)
 
-        // azimuth using atan2 for correct quadrant
         val y = sin(haRad)
         val x = cos(haRad) * sin(latRad) - tan(decRad) * cos(latRad)
-        var azRad = atan2(y, x)
-        var azDeg = Math.toDegrees(azRad)
-        // Convert to 0..360 and make 0 = North, East = 90
-        azDeg = (azDeg + 360.0) % 360.0
+
+        var azDeg = Math.toDegrees(atan2(y, x))
+        azDeg = normalizeDegrees360(azDeg)
 
         val altDeg = Math.toDegrees(altRad)
+
         return azDeg to altDeg
     }
 
+    /**
+     * Converts azimuth/altitude to local ENU unit vector.
+     *
+     * ENU axes:
+     * - x = East
+     * - y = North
+     * - z = Up
+     */
+    fun azAltToENU(azDeg: Double, altDeg: Double): Vec3 {
+        val azRad = Math.toRadians(azDeg)
+        val altRad = Math.toRadians(altDeg)
+
+        val east = cos(altRad) * sin(azRad)
+        val north = cos(altRad) * cos(azRad)
+        val up = sin(altRad)
+
+        return Vec3(east, north, up)
+    }
+
+    /**
+     * Circular smoothing for azimuth angles in degrees.
+     */
+    fun smoothAzimuth(prev: Float, measured: Float, alpha: Float): Float {
+        val a1 = Math.toRadians(prev.toDouble())
+        val a2 = Math.toRadians(measured.toDouble())
+
+        val x = alpha * cos(a1) + (1f - alpha) * cos(a2)
+        val y = alpha * sin(a1) + (1f - alpha) * sin(a2)
+
+        var result = Math.toDegrees(atan2(y, x)).toFloat()
+        if (result < 0f) result += 360f
+        return result
+    }
+
+    private fun normalizeDegrees360(value: Double): Double {
+        return (value % 360.0 + 360.0) % 360.0
+    }
+
+    private fun normalizeDegrees180(value: Double): Double {
+        return ((value + 540.0) % 360.0) - 180.0
+    }
+
     private fun greenwichMeanSiderealTimeDeg(jd: Double): Double {
-        // Robust and commonly used formula (degrees)
-        val T = (jd - 2451545.0) / 36525.0
+        val t = (jd - 2451545.0) / 36525.0
+
         var gmst = 280.46061837 +
                 360.98564736629 * (jd - 2451545.0) +
-                0.000387933 * T * T - T * T * T / 38710000.0
-        gmst = (gmst % 360.0 + 360.0) % 360.0
+                0.000387933 * t * t -
+                (t * t * t) / 38710000.0
+
+        gmst = normalizeDegrees360(gmst)
         return gmst
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateJulianDate(instant: Instant): Double {
-        val seconds = instant.epochSecond.toDouble() + instant.nano.toDouble() / 1_000_000_000.0
+        val seconds = instant.epochSecond.toDouble() +
+                instant.nano.toDouble() / 1_000_000_000.0
         return 2440587.5 + seconds / 86400.0
-    }
-
-    fun smoothAzimuth(prev: Float, measured: Float, alpha: Float): Float {
-        val a1 = Math.toRadians(prev.toDouble())
-        val a2 = Math.toRadians(measured.toDouble())
-        val x = alpha * cos(a1) + (1 - alpha) * cos(a2)
-        val y = alpha * sin(a1) + (1 - alpha) * sin(a2)
-        var sm = Math.toDegrees(atan2(y, x)).toFloat()
-        if (sm < 0) sm += 360f
-        return sm
-    }
-
-    fun azAltToENU(azDeg: Double, altDeg: Double): Vec3 {
-        val az = Math.toRadians(azDeg)
-        val alt = Math.toRadians(altDeg)
-
-        val east = cos(alt) * sin(az)
-        val north = cos(alt) * cos(az)
-        val up = sin(alt)
-
-        return Vec3(east, north, up)
     }
 }
