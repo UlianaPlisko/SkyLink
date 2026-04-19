@@ -30,10 +30,16 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import android.widget.ImageButton
 import android.widget.TextView
+import com.codepalace.accelerometer.sensors.CompassController
+import com.codepalace.accelerometer.ui.view.HalfCompassView
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var skyView: SkyView
+
+    private lateinit var halfCompassView: HalfCompassView
+    private lateinit var compassController: CompassController
+
     private lateinit var orientationHelper: OrientationHelper
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -113,6 +119,24 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
+
+        halfCompassView = findViewById(R.id.halfCompassView)
+
+        compassController = CompassController(this).apply {
+            useTrueNorth = true
+            smoothingAlpha = 0.12f
+
+            onHeadingChanged = { heading ->
+                smoothedAzimuth = heading
+
+                runOnUiThread {
+                    tvDegrees.text = "${heading.toInt()}°"
+                    halfCompassView.headingDeg = heading
+                    skyView.phoneAzimuth = heading
+                }
+            }
+        }
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -136,12 +160,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         orientationHelper = OrientationHelper(this)
-        orientationHelper.onOrientationChanged = { az, pitch, _ ->
-            smoothedAzimuth = CelestialConverter.smoothAzimuth(smoothedAzimuth, az, 0.85f)
+        orientationHelper.onOrientationChanged = { _, pitch, _ ->
             smoothedAltitude = 0.85f * smoothedAltitude + 0.15f * (-pitch)
-
-            skyView.phoneAzimuth = smoothedAzimuth
-            tvDegrees.text = "${smoothedAzimuth.toInt()}°"
         }
 
         orientationHelper.onMatrixChanged = { matrix ->
@@ -154,11 +174,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         orientationHelper.start()
+        compassController.start()
     }
 
     override fun onPause() {
         super.onPause()
         orientationHelper.stop()
+        compassController.stop()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -188,6 +210,7 @@ class MainActivity : AppCompatActivity() {
             .addOnSuccessListener { location ->
                 if (location != null) {
                     viewModel.updateObserverLocation(location.latitude, location.longitude)
+                    compassController.updateLocation(location)
                 } else {
                     requestFreshLocation()
                 }
@@ -209,6 +232,7 @@ class MainActivity : AppCompatActivity() {
             .addOnSuccessListener { location ->
                 if (location != null) {
                     viewModel.updateObserverLocation(location.latitude, location.longitude)
+                    compassController.updateLocation(location)
                 }
             }
     }

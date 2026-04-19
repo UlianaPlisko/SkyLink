@@ -94,33 +94,31 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- Compass -->
+    <!-- Compass -->
     <LinearLayout
         android:id="@+id/compassContainer"
-        android:layout_width="90dp"
-        android:layout_height="90dp"
-        android:layout_marginBottom="10dp"
+        android:layout_width="220dp"
+        android:layout_height="140dp"
         android:orientation="vertical"
         android:gravity="center"
-        android:background="@drawable/compass_panel_bg"
+        android:paddingTop="8dp"
+        android:paddingBottom="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/tvNorthLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="N"
-            android:textColor="@color/accent_gold"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+        <com.codepalace.accelerometer.ui.view.HalfCompassView
+            android:id="@+id/halfCompassView"
+            android:layout_width="200dp"
+            android:layout_height="90dp" />
 
         <TextView
             android:id="@+id/tvDegrees"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="352°"
-            android:textColor="@color/text_dark"
+            android:textColor="@color/accent_gold"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -130,7 +128,7 @@
             android:layout_height="wrap_content"
             android:text="North"
             android:textColor="@color/text_dark"
-            android:textSize="9sp" />
+            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- Loading overlay -->
