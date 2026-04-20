@@ -4,6 +4,7 @@ import android.content.Context
 import com.codepalace.accelerometer.api.CelestialApi
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.SpaceObjectEntity
+import com.codepalace.accelerometer.data.model.SpaceObjectDetail
 import com.codepalace.accelerometer.data.model.SpaceObjectSummary   // your Retrofit model
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -34,11 +35,15 @@ class CelestialRepository(
 
     // Helper to convert your summary to entity
     private fun SpaceObjectSummary.toEntity() = SpaceObjectEntity(
-        id = displayName,   // or use a real ID if your backend has one
+        id = id,
         displayName = displayName,
         objectType = objectType,
         raDeg = if (raDeg <= 24.0) raDeg * 15.0 else raDeg,
         decDeg = decDeg,
         magnitude = magnitude
     )
+
+    suspend fun getSpaceObjectDetail(id: Long): SpaceObjectDetail {
+        return api.getSpaceObjectDetail(id)
+    }
 }

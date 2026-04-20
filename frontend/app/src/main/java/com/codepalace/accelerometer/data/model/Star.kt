@@ -1,6 +1,7 @@
 package com.codepalace.accelerometer.data.model
 
 data class Star(
+    val spaceObjectId: Long,
     val name: String,
     val raDegrees: Double,
     val decDegrees: Double,

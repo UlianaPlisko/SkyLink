@@ -6,9 +6,12 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import com.codepalace.accelerometer.data.model.Star
 import kotlin.math.abs
+import kotlin.math.hypot
 import kotlin.math.tan
 
 class SkyView @JvmOverloads constructor(
@@ -35,9 +38,27 @@ class SkyView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
-    // Keeps label side stable for each star so labels do not jump around
-    // 0=above, 1=right, 2=left, 3=below, 4=upper-right, 5=upper-left
     private val labelAnchorCache = mutableMapOf<String, Int>()
+
+    var onStarClick: ((Star) -> Unit)? = null
+    var onZoom: ((Float) -> Unit)? = null
+
+    private data class ClickableStar(
+        val star: Star,
+        val screenX: Float,
+        val screenY: Float,
+        val radius: Float
+    )
+
+    private var clickableStars: List<ClickableStar> = emptyList()
+
+    private val scaleGestureDetector =
+        ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                onZoom?.invoke(detector.scaleFactor)
+                return true
+            }
+        })
 
     var stars: List<Star> = emptyList()
         set(value) {
@@ -88,6 +109,7 @@ class SkyView @JvmOverloads constructor(
         if (width <= 0 || height <= 0) return
 
         val matrix = rotationMatrix ?: run {
+            clickableStars = emptyList()
             drawCenteredDebug(canvas, "Waiting for orientation...")
             return
         }
@@ -124,11 +146,12 @@ class SkyView @JvmOverloads constructor(
         )
 
         val projectedStars = mutableListOf<ProjectedStar>()
+        val newClickableStars = mutableListOf<ClickableStar>()
 
         for (star in stars) {
             val world = floatArrayOf(
-                star.east.toFloat(),
-                star.north.toFloat(),
+                -star.east.toFloat(),
+                -star.north.toFloat(),
                 star.up.toFloat()
             )
 
@@ -169,6 +192,13 @@ class SkyView @JvmOverloads constructor(
 
             projectedStars += ProjectedStar(star, screenX, screenY, radius)
 
+            newClickableStars += ClickableStar(
+                star = star,
+                screenX = screenX,
+                screenY = screenY,
+                radius = radius + 24f
+            )
+
             visibleStarRects += RectF(
                 screenX - radius - 8f,
                 screenY - radius - 8f,
@@ -184,6 +214,8 @@ class SkyView @JvmOverloads constructor(
 
             canvas.drawCircle(screenX, screenY, radius, starPaint)
         }
+
+        clickableStars = newClickableStars
 
         if (showLabels) {
             val maxLabels = 20
@@ -209,10 +241,44 @@ class SkyView @JvmOverloads constructor(
                     val baselineY = labelRect.top - fm.top
                     canvas.drawText(star.name, labelRect.centerX(), baselineY, textPaint)
                     usedLabelRects += labelRect
-                    labelsDrawn++
                 }
+                labelsDrawn++
             }
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        scaleGestureDetector.onTouchEvent(event)
+
+        if (!scaleGestureDetector.isInProgress && event.action == MotionEvent.ACTION_UP) {
+            val tapped = clickableStars
+                .filter {
+                    val distance = hypot(
+                        (event.x - it.screenX).toDouble(),
+                        (event.y - it.screenY).toDouble()
+                    )
+                    distance <= it.radius
+                }
+                .minByOrNull {
+                    hypot(
+                        (event.x - it.screenX).toDouble(),
+                        (event.y - it.screenY).toDouble()
+                    )
+                }
+
+            if (tapped != null) {
+                onStarClick?.invoke(tapped.star)
+                performClick()
+                return true
+            }
+        }
+
+        return true
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
     }
 
     private fun findStableLabelPosition(
@@ -246,7 +312,7 @@ class SkyView @JvmOverloads constructor(
     }
 
     private fun preferredAnchorForStar(name: String): Int {
-        return (name.hashCode().absoluteValue % 6)
+        return name.hashCode().absoluteValue % 6
     }
 
     private fun buildLabelRect(
@@ -268,37 +334,42 @@ class SkyView @JvmOverloads constructor(
         val boxHeight = textHeight + paddingY * 2f
 
         return when (anchor) {
-            0 -> RectF( // above
+            0 -> RectF(
                 starX - boxWidth / 2f,
                 starY - starRadius - margin - boxHeight,
                 starX + boxWidth / 2f,
                 starY - starRadius - margin
             )
-            1 -> RectF( // right
+
+            1 -> RectF(
                 starX + starRadius + margin,
                 starY - boxHeight / 2f,
                 starX + starRadius + margin + boxWidth,
                 starY + boxHeight / 2f
             )
-            2 -> RectF( // left
+
+            2 -> RectF(
                 starX - starRadius - margin - boxWidth,
                 starY - boxHeight / 2f,
                 starX - starRadius - margin,
                 starY + boxHeight / 2f
             )
-            3 -> RectF( // below
+
+            3 -> RectF(
                 starX - boxWidth / 2f,
                 starY + starRadius + margin,
                 starX + boxWidth / 2f,
                 starY + starRadius + margin + boxHeight
             )
-            4 -> RectF( // upper-right
+
+            4 -> RectF(
                 starX + starRadius + margin,
                 starY - starRadius - margin - boxHeight,
                 starX + starRadius + margin + boxWidth,
                 starY - starRadius - margin
             )
-            else -> RectF( // upper-left
+
+            else -> RectF(
                 starX - starRadius - margin - boxWidth,
                 starY - starRadius - margin - boxHeight,
                 starX - starRadius - margin,

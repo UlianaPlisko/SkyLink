@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [SpaceObjectEntity::class], version = 1, exportSchema = false)
+@Database(entities = [SpaceObjectEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun spaceObjectDao(): SpaceObjectDao
@@ -17,10 +17,12 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "celestial_database"
-                ).build()
+                                context.applicationContext,
+                                AppDatabase::class.java,
+                                "celestial_database"
+                ).fallbackToDestructiveMigration(dropAllTables = true)
+                .build()
+
                 INSTANCE = instance
                 instance
             }

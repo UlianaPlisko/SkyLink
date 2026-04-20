@@ -6,7 +6,9 @@
     <!-- Main accent -->
     <color name="accent_gold">#858163</color>
 
+    <!-- Main menu colors -->
     <color name="dark_blue">#22234C</color>
+    <color name="blue">#4E5186</color>
 
     <!-- Sky background -->
     <color name="sky_dark_blue">#0E1A2B</color>

@@ -102,6 +102,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 val v = CelestialConverter.azAltToENU(az, alt)
                 Star(
+                    spaceObjectId = entity.id,
                     name = entity.displayName,
                     raDegrees = entity.raDeg,
                     decDegrees = entity.decDeg,

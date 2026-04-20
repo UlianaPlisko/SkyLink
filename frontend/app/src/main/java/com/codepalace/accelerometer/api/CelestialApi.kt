@@ -1,7 +1,9 @@
 package com.codepalace.accelerometer.api
 
+import com.codepalace.accelerometer.data.model.SpaceObjectDetail
 import com.codepalace.accelerometer.data.model.SpaceObjectSummary
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface CelestialApi {
@@ -11,4 +13,7 @@ interface CelestialApi {
 
     @GET("/api/celestial/bright-stars")
     suspend fun getBrightStars(@Query("maxMagnitude") maxMagnitude: Double = 3.0): List<SpaceObjectSummary>
+
+    @GET("/api/celestial/space-objects/{id}")
+    suspend fun getSpaceObjectDetail(@Path("id") id: Long): SpaceObjectDetail
 }
