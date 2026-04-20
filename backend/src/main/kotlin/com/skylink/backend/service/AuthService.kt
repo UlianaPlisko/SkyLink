@@ -1,8 +1,5 @@
 package com.skylink.backend.service
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
 import com.skylink.backend.dto.auth.*
 import com.skylink.backend.model.entity.User
 import com.skylink.backend.model.entity.UserCredentials
@@ -19,7 +16,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
-    private val googleVerifier: GoogleIdTokenVerifier
+    private val googleVerifier: com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 ) : AuthServiceInterface {
 
     override fun register(request: RegisterRequest): AuthResponse {
@@ -81,7 +78,10 @@ class AuthService(
 
             return GoogleCallbackResponse(
                 token = jwtService.generateToken(existingUser.email),
-                isPending = false
+                isPending = false,
+                displayName = existingUser.displayName,
+                role = existingUser.role,
+                userId = existingUser.id
             )
         }
 
@@ -100,7 +100,7 @@ class AuthService(
 
         val user = User(
             email = claims.email,
-            displayName = claims.displayName,
+            displayName = request.displayName.trim(),
             role = request.role,
             provider = AuthProvider.GOOGLE
         )

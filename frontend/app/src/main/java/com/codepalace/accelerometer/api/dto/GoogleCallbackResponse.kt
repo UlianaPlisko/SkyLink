@@ -1,14 +1,10 @@
-package com.skylink.backend.dto.auth
+package com.codepalace.accelerometer.api.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.skylink.backend.model.enums.UserRole
+import com.codepalace.accelerometer.data.model.enums.UserRole
 
 data class GoogleCallbackResponse(
     val token: String,
-
-    @field:JsonProperty("isPending")
     val isPending: Boolean,
-
     val displayName: String? = null,
     val role: UserRole? = null,
     val userId: Long? = null

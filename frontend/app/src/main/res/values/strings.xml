@@ -4,4 +4,6 @@
     <string name="search">Search</string>
     <string name="chat">Chat</string>
     <string name="calendar">Calendar</string>
+    <string name="web_client_id">110508747377-quelqpgft20a13er6c6mco01b03amqag.apps.googleusercontent.com</string>
+    <string name="continue_with_google">Continue with Google</string>
 </resources>

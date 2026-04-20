@@ -1,5 +1,8 @@
 package com.codepalace.accelerometer.api
 
+import android.content.Context
+import com.codepalace.accelerometer.api.AuthApi
+import com.codepalace.accelerometer.data.local.SessionStorage
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -7,24 +10,58 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://147.175.161.175:8080/"
+    private const val BASE_URL = "http://10.231.185.99:8080/"
+
+    private lateinit var sessionStorage: SessionStorage
+
+    fun init(context: Context) {
+        sessionStorage = SessionStorage(context.applicationContext)
+    }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .build()
+    private val publicOkHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
 
-    val celestialApi: CelestialApi by lazy {
+    private val authOkHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(sessionStorage))
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private val publicRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient)
+            .client(publicOkHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(CelestialApi::class.java)
     }
+
+    private val authRetrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(authOkHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    val celestialApi: CelestialApi by lazy {
+        publicRetrofit.create(CelestialApi::class.java)
+    }
+
+    val authApi: AuthApi by lazy {
+        authRetrofit.create(AuthApi::class.java)
+    }
+
+    fun getSessionStorage(): SessionStorage = sessionStorage
 }

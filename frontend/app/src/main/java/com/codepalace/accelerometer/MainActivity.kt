@@ -2,11 +2,15 @@ package com.codepalace.accelerometer
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.widget.ImageButton
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -19,27 +23,23 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.codepalace.accelerometer.api.ApiClient
+import com.codepalace.accelerometer.sensors.CompassController
 import com.codepalace.accelerometer.sensors.OrientationHelper
+import com.codepalace.accelerometer.ui.view.HalfCompassView
 import com.codepalace.accelerometer.ui.view.SkyView
 import com.codepalace.accelerometer.ui.viewmodel.MainViewModel
-import com.codepalace.accelerometer.util.CelestialConverter
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
-import android.widget.ImageButton
-import android.widget.TextView
-import com.codepalace.accelerometer.sensors.CompassController
-import com.codepalace.accelerometer.ui.view.HalfCompassView
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var skyView: SkyView
-
     private lateinit var halfCompassView: HalfCompassView
     private lateinit var compassController: CompassController
-
     private lateinit var orientationHelper: OrientationHelper
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -71,6 +71,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        ApiClient.init(this)
+
         skyView = findViewById(R.id.skyView)
         tvTime = findViewById(R.id.tvTime)
         tvDegrees = findViewById(R.id.tvDegrees)
@@ -82,19 +84,27 @@ class MainActivity : AppCompatActivity() {
         updateCurrentTime()
 
         btnMenu.setOnClickListener {
-            // open menu later
+            startActivity(Intent(this, MenuActivity::class.java))
         }
 
         btnSearch.setOnClickListener {
-            // search later
+            Toast.makeText(this, "Search later", Toast.LENGTH_SHORT).show()
         }
 
         btnChat.setOnClickListener {
-            // chat later
+            if (ApiClient.getSessionStorage().isLoggedIn()) {
+                Toast.makeText(this, "Chat later", Toast.LENGTH_SHORT).show()
+            } else {
+                startActivity(Intent(this, AuthActivity::class.java))
+            }
         }
 
         btnCalendar.setOnClickListener {
-            // calendar later
+            if (ApiClient.getSessionStorage().isLoggedIn()) {
+                Toast.makeText(this, "Calendar later", Toast.LENGTH_SHORT).show()
+            } else {
+                startActivity(Intent(this, AuthActivity::class.java))
+            }
         }
 
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
@@ -107,18 +117,20 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                viewModel.zoomBy(detector.scaleFactor)   // live zoom while pinching
-                return true
+        scaleGestureDetector = ScaleGestureDetector(
+            this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    viewModel.zoomBy(detector.scaleFactor)
+                    return true
+                }
             }
-        })
+        )
 
         skyView.setOnTouchListener { _, event ->
             scaleGestureDetector.onTouchEvent(event)
             true
         }
-
 
         halfCompassView = findViewById(R.id.halfCompassView)
 
@@ -175,6 +187,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         orientationHelper.start()
         compassController.start()
+        updateCurrentTime()
     }
 
     override fun onPause() {
