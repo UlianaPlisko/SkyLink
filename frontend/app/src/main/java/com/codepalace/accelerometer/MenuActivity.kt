@@ -8,10 +8,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.codepalace.accelerometer.api.ApiClient
-
+import android.widget.ImageButton
 class MenuActivity : AppCompatActivity() {
 
-    private lateinit var btnBackMenu: TextView
+    private lateinit var btnBack: ImageButton
     private lateinit var itemProfile: LinearLayout
     private lateinit var itemSkyCultures: LinearLayout
     private lateinit var itemSettings: LinearLayout
@@ -23,7 +23,7 @@ class MenuActivity : AppCompatActivity() {
         ApiClient.init(this)
         setContentView(R.layout.activity_menu)
 
-        btnBackMenu = findViewById(R.id.btnBackMenu)
+        btnBack = findViewById(R.id.btnBack)
         itemProfile = findViewById(R.id.itemProfile)
         itemSkyCultures = findViewById(R.id.itemSkyCultures)
         itemSettings = findViewById(R.id.itemSettings)
@@ -32,7 +32,7 @@ class MenuActivity : AppCompatActivity() {
 
         updateMenuUi()
 
-        btnBackMenu.setOnClickListener {
+        btnBack.setOnClickListener {
             finish()
         }
 

@@ -14,6 +14,7 @@ import com.codepalace.accelerometer.data.model.enums.UserRole
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import android.widget.ImageButton
 
 class GoogleCompleteActivity : AppCompatActivity() {
 
@@ -22,12 +23,17 @@ class GoogleCompleteActivity : AppCompatActivity() {
         ApiClient.init(this)
         setContentView(R.layout.activity_google_complete)
 
+        val btnBack = findViewById<ImageButton>(R.id.btnBack)
         val etDisplayName = findViewById<EditText>(R.id.etGoogleDisplayName)
         val rgRole = findViewById<RadioGroup>(R.id.rgRole)
         val btnComplete = findViewById<Button>(R.id.btnCompleteGoogle)
 
         val prefillName = intent.getStringExtra("prefill_display_name").orEmpty()
         etDisplayName.setText(prefillName)
+
+        btnBack.setOnClickListener {
+            finish()
+        }
 
         btnComplete.setOnClickListener {
             val displayName = etDisplayName.text.toString().trim()

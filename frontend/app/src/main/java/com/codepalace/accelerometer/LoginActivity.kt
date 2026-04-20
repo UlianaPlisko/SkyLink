@@ -13,6 +13,7 @@ import com.codepalace.accelerometer.repository.AuthRepository
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import android.widget.ImageButton
 
 class LoginActivity : AppCompatActivity() {
 
@@ -23,13 +24,13 @@ class LoginActivity : AppCompatActivity() {
         ApiClient.init(this)
         setContentView(R.layout.activity_login)
 
-        val tvBackLogin = findViewById<TextView>(R.id.tvBackLogin)
+        val btnBack = findViewById<ImageButton>(R.id.btnBack)
         val etLoginUsername = findViewById<EditText>(R.id.etLoginUsername)
         val etLoginPassword = findViewById<EditText>(R.id.etLoginPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val tvGoSignupFromLogin = findViewById<TextView>(R.id.tvGoSignupFromLogin)
 
-        tvBackLogin.setOnClickListener {
+        btnBack.setOnClickListener {
             finish()
         }
 
