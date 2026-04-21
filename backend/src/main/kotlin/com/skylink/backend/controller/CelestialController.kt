@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 
 @Tag(
     name = "Celestial Data",
@@ -31,9 +33,29 @@ class CelestialController(
 
     @Operation(summary = "Get detailed information about a space object by ID")
     @GetMapping("/space-objects/{id}")
-    fun getSpaceObjectDetail(@PathVariable id: Long): ResponseEntity<Any> {
+    fun getSpaceObjectDetail(@PathVariable id: Long): ResponseEntity<SpaceObjectDetailResponse> {
         val detail = celestialService.getSpaceObjectDetail(id)
         return if (detail != null) ResponseEntity.ok(detail) else ResponseEntity.notFound().build()
+    }
+
+    @Operation(summary = "Get Wikipedia information about a space object by ID")
+    @GetMapping("/space-objects/{id}/wiki")
+    fun getSpaceObjectWiki(@PathVariable id: Long): ResponseEntity<WikiResponse> {
+        val wiki = celestialService.getSpaceObjectWiki(id)
+        return if (wiki != null) ResponseEntity.ok(wiki) else ResponseEntity.notFound().build()
+    }
+
+    @Operation(summary = "Get proxied Wikipedia image for a space object by ID")
+    @GetMapping("/space-objects/{id}/wiki-image")
+    fun getSpaceObjectWikiImage(@PathVariable id: Long): ResponseEntity<ByteArray> {
+        val imageBytes = celestialService.getSpaceObjectWikiImage(id)
+            ?: return ResponseEntity.notFound().build()
+
+        val contentType = celestialService.getSpaceObjectWikiImageContentType(id) ?: "image/jpeg"
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_TYPE, contentType)
+            .body(imageBytes)
     }
 
     @Operation(summary = "Get all constellations")

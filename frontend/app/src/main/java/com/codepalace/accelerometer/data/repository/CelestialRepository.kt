@@ -6,6 +6,7 @@ import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.SpaceObjectEntity
 import com.codepalace.accelerometer.data.model.SpaceObjectDetail
 import com.codepalace.accelerometer.data.model.SpaceObjectSummary   // your Retrofit model
+import com.codepalace.accelerometer.data.model.dto.WikiResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -45,5 +46,13 @@ class CelestialRepository(
 
     suspend fun getSpaceObjectDetail(id: Long): SpaceObjectDetail {
         return api.getSpaceObjectDetail(id)
+    }
+
+    suspend fun getSpaceObjectWiki(id: Long): WikiResponse? {
+        return try {
+            api.getSpaceObjectWiki(id)
+        } catch (e: Exception) {
+            null
+        }
     }
 }

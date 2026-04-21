@@ -28,6 +28,9 @@ class StarDetailViewModel(application: Application) : AndroidViewModel(applicati
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _loadingMessage = MutableStateFlow<String?>(null)
+    val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -39,7 +42,22 @@ class StarDetailViewModel(application: Application) : AndroidViewModel(applicati
             try {
                 val result = repository.getSpaceObjectDetail(id)
                 _detail.value = result
-                Log.d(TAG, "Loaded detail for id=$id: ${result.displayName}")
+                Log.d(TAG, "Loaded base detail for id=$id: ${result.displayName}")
+
+                val wiki = repository.getSpaceObjectWiki(id)
+                if (wiki != null) {
+                    _detail.value = result.copy(
+                        wikiSummary = wiki.summary,
+                        wikiUrl = wiki.url,
+                        imageUrl = wiki.imageUrl
+                    )
+
+                    Log.d(TAG, "Updated detail imageUrl for id=$id: ${_detail.value?.imageUrl}")
+                    Log.d(TAG, "Loaded wiki info for id=$id")
+                } else {
+                    Log.d(TAG, "No wiki info available for id=$id")
+                }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load detail for id=$id", e)
                 _error.value = "Failed to load details"

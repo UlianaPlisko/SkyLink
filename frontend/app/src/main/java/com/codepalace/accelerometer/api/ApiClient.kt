@@ -2,6 +2,7 @@ package com.codepalace.accelerometer.api
 
 import android.content.Context
 import com.codepalace.accelerometer.api.AuthApi
+import com.codepalace.accelerometer.config.ApiConfig
 import com.codepalace.accelerometer.data.local.SessionStorage
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -10,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.231.185.99:8080/"
+    private const val BASE_URL = ApiConfig.BASE_URL
 
     private lateinit var sessionStorage: SessionStorage
 

@@ -6,6 +6,7 @@ import com.skylink.backend.model.enums.*
 import com.skylink.backend.repository.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.slf4j.LoggerFactory
 
 /**
  * Service implementation for all celestial data operations.
@@ -28,8 +29,11 @@ class CelestialService(
     private val deepSkyObjectDataRepository: DeepSkyObjectDataRepository,
     private val constellationRepository: ConstellationRepository,
     private val constStarConnectionRepository: ConstStarConnectionRepository,
-    private val constellationCultureRepository: ConstellationCultureRepository
+    private val constellationCultureRepository: ConstellationCultureRepository,
+    private val wikipediaService: WikipediaService
 ) : CelestialServiceInterface {
+
+    private val log = LoggerFactory.getLogger(CelestialService::class.java)
 
     /**
      * Returns **all** space objects in the database (stars, planets, deep sky objects, etc.).
@@ -70,7 +74,7 @@ class CelestialService(
      * @return type-specific detail response or `null`
      */
     @Transactional(readOnly = true)
-    override fun getSpaceObjectDetail(id: Long): Any? {
+    override fun getSpaceObjectDetail(id: Long): SpaceObjectDetailResponse? {
         val spaceObject = spaceObjectRepository.findById(id).orElse(null) ?: return null
 
         return when (spaceObject.objectType) {
@@ -81,21 +85,139 @@ class CelestialService(
         }
     }
 
+    @Transactional(readOnly = true)
+    override fun getSpaceObjectWiki(id: Long): WikiResponse? {
+        val spaceObject = spaceObjectRepository.findById(id).orElse(null) ?: return null
+        val wiki = findAcceptedWikiResponse(spaceObject) ?: return null
+
+        return wiki.copy(
+            imageUrl = "/api/celestial/space-objects/$id/wiki-image"
+        )
+    }
+
+    @Transactional(readOnly = true)
+    override fun getSpaceObjectWikiImage(id: Long): ByteArray? {
+        val spaceObject = spaceObjectRepository.findById(id).orElse(null) ?: return null
+        val wiki = findAcceptedWikiResponse(spaceObject) ?: return null
+        val imageUrl = wiki.imageUrl ?: return null
+
+        log.info("Downloading wiki image for id={} from {}", id, imageUrl)
+        return wikipediaService.downloadImage(imageUrl)
+    }
+
+    @Transactional(readOnly = true)
+    override fun getSpaceObjectWikiImageContentType(id: Long): String? {
+        val spaceObject = spaceObjectRepository.findById(id).orElse(null) ?: return null
+        val wiki = findAcceptedWikiResponse(spaceObject) ?: return null
+        val imageUrl = wiki.imageUrl ?: return null
+
+        return wikipediaService.guessContentType(imageUrl)
+    }
+
+    private fun buildWikiCandidates(name: String, type: SpaceObjectType): List<String> {
+        return when (type) {
+            SpaceObjectType.STAR -> listOf(
+                name,
+                "$name star",
+                "$name astronomy"
+            )
+            SpaceObjectType.PLANET -> listOf(
+                name,
+                "$name planet",
+                "$name astronomy"
+            )
+            SpaceObjectType.GALAXY -> listOf(
+                name,
+                "$name galaxy",
+                "$name astronomy",
+                "$name deep sky object"
+            )
+            else -> listOf(name)
+        }
+    }
+
+    private fun normalizeWikiName(name: String): String {
+        return when (name.trim().lowercase()) {
+            "sol" -> "Sun"
+            "luna" -> "Moon"
+            "terra" -> "Earth"
+            else -> name
+        }
+    }
+
+    private fun isDisambiguation(summary: String?): Boolean {
+        if (summary.isNullOrBlank()) return true
+
+        val text = summary.lowercase()
+        return text.contains("may refer to:") ||
+                text.contains("may also refer to") ||
+                text.contains("can refer to")
+    }
+
     /**
      * Private method to build star details.
      */
     private fun getStarDetail(spaceObject: SpaceObject): StarResponse? {
         val starData = starDataRepository.findBySpaceObjectId(spaceObject.id) ?: return null
+
         return StarResponse(
             id = spaceObject.id,
             displayName = spaceObject.displayName ?: "Unknown",
             magnitude = spaceObject.magnitude,
             raDeg = spaceObject.raDeg ?: 0.0,
             decDeg = spaceObject.decDeg ?: 0.0,
+            description = spaceObject.description,
+            wikiSummary = null,
+            wikiUrl = null,
             constellation = starData.constellation,
             spectralType = starData.spectralType,
             distanceLy = starData.distanceLy
         )
+    }
+
+    private fun findAcceptedWikiResponse(spaceObject: SpaceObject): WikiResponse? {
+        log.info("Wiki lookup started for spaceObject id={}", spaceObject.id)
+
+        val rawName = spaceObject.displayName ?: return null
+        val normalizedName = normalizeWikiName(rawName)
+
+        val candidates = buildWikiCandidates(normalizedName, spaceObject.objectType)
+        log.info("Wiki candidates for id={}: {}", spaceObject.id, candidates)
+
+        for (candidate in candidates) {
+            log.info("Trying wiki candidate='{}' for id={}", candidate, spaceObject.id)
+
+            val result = wikipediaService.fetchSummary(candidate)
+
+            if (result == null) {
+                log.info("No wiki result for candidate='{}'", candidate)
+                continue
+            }
+
+            log.info(
+                "Wiki result for candidate='{}': title='{}', hasSummary={}, imageUrl='{}'",
+                candidate,
+                result.title,
+                !result.summary.isNullOrBlank(),
+                result.imageUrl
+            )
+
+            if (isDisambiguation(result.summary)) {
+                log.info("Rejected wiki candidate='{}' because summary looks like disambiguation", candidate)
+                continue
+            }
+
+            if (result.summary.isNullOrBlank()) {
+                log.info("Rejected wiki candidate='{}' because summary is blank", candidate)
+                continue
+            }
+
+            log.info("Accepted wiki candidate='{}' for id={}", candidate, spaceObject.id)
+            return result
+        }
+
+        log.warn("No suitable wiki result found for id={}", spaceObject.id)
+        return null
     }
 
     /**
@@ -103,12 +225,16 @@ class CelestialService(
      */
     private fun getPlanetDetail(spaceObject: SpaceObject): PlanetResponse? {
         val planetData = planetDataRepository.findBySpaceObjectId(spaceObject.id) ?: return null
+
         return PlanetResponse(
             id = spaceObject.id,
             displayName = spaceObject.displayName ?: "Unknown",
             magnitude = spaceObject.magnitude,
             raDeg = spaceObject.raDeg ?: 0.0,
             decDeg = spaceObject.decDeg ?: 0.0,
+            description = spaceObject.description,
+            wikiSummary = null,
+            wikiUrl = null,
             orbitalModel = planetData.orbitalModel,
             lastComputed = planetData.lastComputed
         )
@@ -119,12 +245,16 @@ class CelestialService(
      */
     private fun getDeepSkyObjectDetail(spaceObject: SpaceObject): DeepSkyObjectResponse? {
         val dsoData = deepSkyObjectDataRepository.findBySpaceObjectId(spaceObject.id) ?: return null
+
         return DeepSkyObjectResponse(
             id = spaceObject.id,
             displayName = spaceObject.displayName ?: "Unknown",
             magnitude = spaceObject.magnitude,
             raDeg = spaceObject.raDeg ?: 0.0,
             decDeg = spaceObject.decDeg ?: 0.0,
+            description = spaceObject.description,
+            wikiSummary = null,
+            wikiUrl = null,
             catalogId = dsoData.catalogId,
             objectClass = dsoData.objectClass.name,
             angularSize = dsoData.angularSize

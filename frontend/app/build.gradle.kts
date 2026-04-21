@@ -43,6 +43,8 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
 
+    implementation("io.coil-kt:coil:2.7.0")
+
     // Room (now using catalog)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

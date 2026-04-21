@@ -51,7 +51,9 @@
             android:layout_height="170dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="18dp"
+            android:adjustViewBounds="true"
             android:background="@color/blue"
+            android:contentDescription="Space object image"
             android:scaleType="centerCrop"
             android:src="@android:drawable/ic_menu_gallery" />
 

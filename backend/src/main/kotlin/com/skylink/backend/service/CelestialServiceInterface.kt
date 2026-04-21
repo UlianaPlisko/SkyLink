@@ -23,7 +23,13 @@ interface CelestialServiceInterface {
      * @param id ID of the space object
      * @return type-specific detail response or `null`
      */
-    fun getSpaceObjectDetail(id: Long): Any?
+    fun getSpaceObjectDetail(id: Long): SpaceObjectDetailResponse?
+
+    fun getSpaceObjectWiki(id: Long): WikiResponse?
+
+    fun getSpaceObjectWikiImageContentType(id: Long): String?
+
+    fun getSpaceObjectWikiImage(id: Long): ByteArray?
 
     /** Constellation detail with its stars (this is the connection you asked for) */
     fun getConstellationDetail(id: Long): ConstellationDetailResponse?
