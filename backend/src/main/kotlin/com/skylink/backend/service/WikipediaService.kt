@@ -3,7 +3,6 @@ package com.skylink.backend.service
 import com.skylink.backend.dto.celestial.WikiResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -17,55 +16,46 @@ class WikipediaService {
 
     private val wikiClient = WebClient.builder()
         .baseUrl("https://en.wikipedia.org/api/rest_v1")
+        .defaultHeader(HttpHeaders.USER_AGENT, "SkyLinkBackend/1.0")
         .build()
 
     private val imageClient = WebClient.builder()
         .defaultHeader(HttpHeaders.USER_AGENT, "SkyLinkBackend/1.0")
         .build()
 
-    @Service
-    class WikipediaService {
+    fun fetchSummary(title: String): WikiResponse? {
+        if (title.isBlank()) return null
 
-        private val log = LoggerFactory.getLogger(WikipediaService::class.java)
+        return try {
+            val encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8)
 
-        private val wikiClient = WebClient.builder()
-            .baseUrl("https://en.wikipedia.org/api/rest_v1")
-            .build()
+            val response = wikiClient.get()
+                .uri("/page/summary/$encodedTitle")
+                .retrieve()
+                .bodyToMono(WikipediaSummaryApiResponse::class.java)
+                .block()
 
-        fun fetchSummary(title: String): WikiResponse? {
-            if (title.isBlank()) return null
-
-            return try {
-                val encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8)
-
-                val response = wikiClient.get()
-                    .uri("/page/summary/$encodedTitle")
-                    .retrieve()
-                    .bodyToMono(WikipediaSummaryApiResponse::class.java)
-                    .block()
-
-                response?.let {
-                    WikiResponse(
-                        title = it.title ?: title,
-                        summary = it.extract,
-                        url = it.contentUrls?.desktop?.page,
-                        imageUrl = it.thumbnail?.source
-                    )
-                }
-            } catch (e: WebClientResponseException.NotFound) {
-                log.info("Wikipedia page not found for title={}", title)
-                null
-            } catch (e: WebClientResponseException) {
-                log.warn(
-                    "Wikipedia request failed for title={} with status {}",
-                    title,
-                    e.statusCode
+            response?.let {
+                WikiResponse(
+                    title = it.title ?: title,
+                    summary = it.extract,
+                    url = it.contentUrls?.desktop?.page,
+                    imageUrl = it.thumbnail?.source
                 )
-                null
-            } catch (e: Exception) {
-                log.error("Unexpected Wikipedia fetch error for title={}", title, e)
-                null
             }
+        } catch (e: WebClientResponseException.NotFound) {
+            log.info("Wikipedia page not found for title={}", title)
+            null
+        } catch (e: WebClientResponseException) {
+            log.warn(
+                "Wikipedia request failed for title={} with status {}",
+                title,
+                e.statusCode
+            )
+            null
+        } catch (e: Exception) {
+            log.error("Unexpected Wikipedia fetch error for title={}", title, e)
+            null
         }
     }
 
