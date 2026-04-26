@@ -9,6 +9,9 @@
     <!-- Main menu colors -->
     <color name="dark_blue">#22234C</color>
     <color name="blue">#4E5186</color>
+    <color name="blue_light">#5A5E99</color>
+    <color name="error_red">#8E3447</color>
+    <color name="surface_gray">#A7A7A7</color>
 
     <!-- Sky background -->
     <color name="sky_dark_blue">#0E1A2B</color>
@@ -21,6 +24,7 @@
     <!-- Text -->
     <color name="text_primary_light">#FFFFFF</color>
     <color name="text_dark">#1E1E1E</color>
+    <color name="text_muted_light">#C9C9D6</color>
 
     <!-- Loading overlay -->
     <color name="loading_overlay">#66000000</color>

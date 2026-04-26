@@ -1,7 +1,6 @@
 package com.codepalace.accelerometer.api
 
 import android.content.Context
-import com.codepalace.accelerometer.api.AuthApi
 import com.codepalace.accelerometer.config.ApiConfig
 import com.codepalace.accelerometer.data.local.SessionStorage
 import okhttp3.OkHttpClient
@@ -62,6 +61,14 @@ object ApiClient {
 
     val authApi: AuthApi by lazy {
         authRetrofit.create(AuthApi::class.java)
+    }
+
+    val profileApi: ProfileApi by lazy {
+        authRetrofit.create(ProfileApi::class.java)
+    }
+
+    val favoriteApi: FavoriteApi by lazy {
+        authRetrofit.create(FavoriteApi::class.java)
     }
 
     fun getSessionStorage(): SessionStorage = sessionStorage

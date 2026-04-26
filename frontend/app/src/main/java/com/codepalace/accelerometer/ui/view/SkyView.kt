@@ -11,7 +11,9 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import com.codepalace.accelerometer.data.model.Star
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.sin
 import kotlin.math.tan
 
 class SkyView @JvmOverloads constructor(
@@ -27,6 +29,7 @@ class SkyView @JvmOverloads constructor(
     }
 
     private val skyBackgroundColor = Color.rgb(14, 26, 43)
+    private val redSkyBackgroundColor = Color.rgb(68, 12, 24)
 
     private val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -42,6 +45,7 @@ class SkyView @JvmOverloads constructor(
 
     var onStarClick: ((Star) -> Unit)? = null
     var onZoom: ((Float) -> Unit)? = null
+    var onManualViewChanged: ((Float, Float) -> Unit)? = null
 
     private data class ClickableStar(
         val star: Star,
@@ -51,6 +55,28 @@ class SkyView @JvmOverloads constructor(
     )
 
     private var clickableStars: List<ClickableStar> = emptyList()
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+    private var totalTouchDistance = 0f
+    private var touchHadMultiplePointers = false
+
+    var redModeEnabled: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var manualControlEnabled: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var manualAzimuth: Float = 0f
+        private set
+
+    var manualAltitude: Float = 20f
+        private set
 
     private val scaleGestureDetector =
         ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -104,11 +130,15 @@ class SkyView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(skyBackgroundColor)
+        canvas.drawColor(if (redModeEnabled) redSkyBackgroundColor else skyBackgroundColor)
 
         if (width <= 0 || height <= 0) return
 
-        val matrix = rotationMatrix ?: run {
+        val matrix = if (manualControlEnabled) {
+            manualRotationMatrix()
+        } else {
+            rotationMatrix
+        } ?: run {
             clickableStars = emptyList()
             drawCenteredDebug(canvas, "Waiting for orientation...")
             return
@@ -250,7 +280,44 @@ class SkyView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleGestureDetector.onTouchEvent(event)
 
-        if (!scaleGestureDetector.isInProgress && event.action == MotionEvent.ACTION_UP) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchX = event.x
+                lastTouchY = event.y
+                totalTouchDistance = 0f
+                touchHadMultiplePointers = false
+            }
+
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                touchHadMultiplePointers = true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (event.pointerCount > 1) {
+                    touchHadMultiplePointers = true
+                }
+
+                if (manualControlEnabled && event.pointerCount == 1 && !scaleGestureDetector.isInProgress) {
+                    val dx = event.x - lastTouchX
+                    val dy = event.y - lastTouchY
+                    totalTouchDistance += hypot(dx.toDouble(), dy.toDouble()).toFloat()
+
+                    manualAzimuth = normalizeDegrees(manualAzimuth - dx * 0.18f)
+                    manualAltitude = (manualAltitude - dy * 0.12f).coerceIn(-20f, 90f)
+                    onManualViewChanged?.invoke(manualAzimuth, manualAltitude)
+
+                    lastTouchX = event.x
+                    lastTouchY = event.y
+                    invalidate()
+                }
+            }
+        }
+
+        if (!scaleGestureDetector.isInProgress &&
+            event.actionMasked == MotionEvent.ACTION_UP &&
+            totalTouchDistance < 20f &&
+            !touchHadMultiplePointers
+        ) {
             val tapped = clickableStars
                 .filter {
                     val distance = hypot(
@@ -274,6 +341,13 @@ class SkyView @JvmOverloads constructor(
         }
 
         return true
+    }
+
+    fun setManualLook(azimuth: Float, altitude: Float) {
+        manualAzimuth = normalizeDegrees(azimuth)
+        manualAltitude = altitude.coerceIn(-20f, 90f)
+        onManualViewChanged?.invoke(manualAzimuth, manualAltitude)
+        invalidate()
     }
 
     override fun performClick(): Boolean {
@@ -408,6 +482,39 @@ class SkyView @JvmOverloads constructor(
         canvas.drawText(message, width / 2f, height / 2f, textPaint)
         textPaint.textSize = 30f
         textPaint.color = Color.argb(220, 210, 210, 210)
+    }
+
+    private fun manualRotationMatrix(): FloatArray {
+        val azimuthRad = Math.toRadians(manualAzimuth.toDouble())
+        val altitudeRad = Math.toRadians(manualAltitude.toDouble())
+
+        val sinAz = sin(azimuthRad)
+        val cosAz = cos(azimuthRad)
+        val sinAlt = sin(altitudeRad)
+        val cosAlt = cos(altitudeRad)
+
+        val rightX = -cosAz
+        val rightY = sinAz
+        val rightZ = 0.0
+
+        val backwardX = sinAz * cosAlt
+        val backwardY = cosAz * cosAlt
+        val backwardZ = -sinAlt
+
+        val upX = backwardY * rightZ - backwardZ * rightY
+        val upY = backwardZ * rightX - backwardX * rightZ
+        val upZ = backwardX * rightY - backwardY * rightX
+
+        return floatArrayOf(
+            rightX.toFloat(), upX.toFloat(), backwardX.toFloat(),
+            rightY.toFloat(), upY.toFloat(), backwardY.toFloat(),
+            rightZ.toFloat(), upZ.toFloat(), backwardZ.toFloat()
+        )
+    }
+
+    private fun normalizeDegrees(value: Float): Float {
+        val result = value % 360f
+        return if (result < 0f) result + 360f else result
     }
 
     private fun multiplyTransposeMatVec(m: FloatArray, v: FloatArray): FloatArray {

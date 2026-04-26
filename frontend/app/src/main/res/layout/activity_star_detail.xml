@@ -28,7 +28,8 @@
                 android:background="@android:color/transparent"
                 android:contentDescription="Back"
                 android:padding="4dp"
-                android:src="@drawable/ic_back" />
+                android:src="@drawable/ic_back"
+                android:tint="@color/accent_gold" />
 
             <TextView
                 android:id="@+id/tvTitle"
@@ -75,11 +76,12 @@
                 android:textSize="14sp" />
 
             <ImageButton
+                android:id="@+id/btnFavorite"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:background="@android:color/transparent"
                 android:contentDescription="Favorite"
-                android:src="@android:drawable/btn_star_big_off" />
+                android:src="@drawable/ic_star_outline" />
         </LinearLayout>
 
         <View

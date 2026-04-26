@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -34,10 +35,13 @@ import kotlinx.coroutines.launch
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.sensors.CompassController
 import com.codepalace.accelerometer.ui.view.HalfCompassView
 import com.codepalace.accelerometer.ui.view.StarDetailActivity
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,11 +52,13 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var orientationHelper: OrientationHelper
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var settingsStorage: AppSettingsStorage
 
     private val viewModel: MainViewModel by viewModels()
 
     private var smoothedAzimuth: Float = 0f
     private var smoothedAltitude: Float = 0f
+    private var lastSensorsEnabled: Boolean? = null
 
     private lateinit var tvTime: TextView
     private lateinit var tvDegrees: TextView
@@ -83,6 +89,11 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 fetchLocation()
+            } else {
+                showAppMessage(
+                    "Allow location access or enter coordinates manually in settings.",
+                    MessageKind.INFO
+                )
             }
         }
 
@@ -111,20 +122,21 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnSearch.setOnClickListener {
-            // search later
+            showAppMessage("Search will be available soon.", MessageKind.INFO)
         }
 
         btnChat.setOnClickListener {
-            // chat later
+            showAppMessage("Chat will be available soon.", MessageKind.INFO)
         }
 
         btnCalendar.setOnClickListener {
-            // calendar later
+            showAppMessage("Calendar will be available soon.", MessageKind.INFO)
         }
 
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        settingsStorage = AppSettingsStorage(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -136,6 +148,11 @@ class MainActivity : AppCompatActivity() {
 
         skyView.onZoom = { scaleFactor ->
             viewModel.zoomBy(scaleFactor)
+        }
+
+        skyView.onManualViewChanged = { azimuth, _ ->
+            tvDegrees.text = "${azimuth.toInt()}°"
+            halfCompassView.headingDeg = azimuth
         }
 
         skyView.onStarClick = { star ->
@@ -204,13 +221,13 @@ class MainActivity : AppCompatActivity() {
             skyView.rotationMatrix = matrix
         }
 
-        requestLocationIfNeeded()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
-        orientationHelper.start()
-        compassController.start()
+        applyRuntimeSettings()
+        requestLocationIfNeeded()
 
         updateCurrentTime()
         timeHandler.post(timeRunnable)
@@ -226,6 +243,28 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun requestLocationIfNeeded() {
+        if (!settingsStorage.autoLocationEnabled) {
+            val latitude = settingsStorage.manualLatitude()
+            val longitude = settingsStorage.manualLongitude()
+
+            if (latitude != null && longitude != null) {
+                viewModel.updateObserverLocation(latitude, longitude)
+                compassController.updateLocation(
+                    Location("manual").apply {
+                        this.latitude = latitude
+                        this.longitude = longitude
+                    }
+                )
+                return
+            }
+
+            showAppMessage(
+                "Enter manual latitude and longitude in location settings.",
+                MessageKind.INFO
+            )
+            return
+        }
+
         when {
             ContextCompat.checkSelfPermission(
                 this,
@@ -281,5 +320,26 @@ class MainActivity : AppCompatActivity() {
     private fun updateCurrentTime() {
         val formatter = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         tvTime.text = formatter.format(java.util.Date())
+    }
+
+    private fun applyRuntimeSettings() {
+        skyView.redModeEnabled = settingsStorage.redModeEnabled
+
+        val sensorsEnabled = settingsStorage.automaticSensors
+        skyView.manualControlEnabled = !sensorsEnabled
+
+        if (sensorsEnabled) {
+            orientationHelper.start()
+            compassController.start()
+        } else {
+            orientationHelper.stop()
+            compassController.stop()
+
+            if (lastSensorsEnabled != false) {
+                skyView.setManualLook(smoothedAzimuth, skyView.manualAltitude)
+            }
+        }
+
+        lastSensorsEnabled = sensorsEnabled
     }
 }

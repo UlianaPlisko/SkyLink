@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.repository.AuthRepository
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -59,20 +61,23 @@ class LoginActivity : AppCompatActivity() {
                     token = response.token,
                     role = response.role.name,
                     displayName = response.displayName,
-                    userId = response.userId
+                    userId = response.userId,
+                    provider = "LOCAL"
                 )
 
-                Toast.makeText(this@LoginActivity, "Login successful", Toast.LENGTH_SHORT).show()
+                showAppMessage("Welcome back, ${response.displayName}.", MessageKind.SUCCESS)
                 startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                 finishAffinity()
 
             } catch (e: HttpException) {
-                Toast.makeText(this@LoginActivity, "Login failed: ${e.code()}", Toast.LENGTH_LONG).show()
+                showAppMessage(
+                    ApiErrorMapper.fromHttpException(e, "Unable to log in right now. Try again."),
+                    MessageKind.ERROR
+                )
             } catch (e: IOException) {
-                e.printStackTrace()
-                Toast.makeText(this@LoginActivity, "Network error: ${e.message}", Toast.LENGTH_LONG).show()
+                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, e.message ?: "Unexpected error", Toast.LENGTH_LONG).show()
+                showAppMessage(ApiErrorMapper.fromThrowable(e), MessageKind.ERROR)
             }
         }
     }

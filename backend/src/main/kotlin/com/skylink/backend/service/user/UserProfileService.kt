@@ -139,6 +139,7 @@ class UserProfileService(
             id = user.id,
             email = user.email,
             displayName = user.displayName,
+            provider = user.provider,
             role = user.role,
             createdAt = user.createdAt,
             lastUsedAt = user.lastUsedAt,

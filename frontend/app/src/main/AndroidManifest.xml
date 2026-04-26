@@ -21,7 +21,12 @@
         <activity android:name=".LoginActivity" />
         <activity android:name=".SignupActivity" />
         <activity android:name=".MenuActivity" />
+        <activity android:name=".ProfileActivity" />
+        <activity android:name=".SettingsActivity" />
+        <activity android:name=".AccountSettingsActivity" />
+        <activity android:name=".LocationSettingsActivity" />
         <activity android:name=".GoogleCompleteActivity" />
+        <activity android:name=".FavoritesActivity" />
 
 <!--        <activity-->
 <!--            android:name=".ui.view.MenuActivity"-->

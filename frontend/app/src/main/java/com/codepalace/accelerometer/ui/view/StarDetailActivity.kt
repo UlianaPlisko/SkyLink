@@ -1,5 +1,6 @@
 package com.codepalace.accelerometer.ui.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -14,14 +15,23 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
+import com.codepalace.accelerometer.AuthActivity
 import com.codepalace.accelerometer.R
+import com.codepalace.accelerometer.api.ApiClient
+import com.codepalace.accelerometer.api.ApiErrorMapper
+import com.codepalace.accelerometer.api.dto.FavoriteRequest
 import com.codepalace.accelerometer.config.ApiConfig
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.ui.viewmodel.StarDetailViewModel
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
 class StarDetailActivity : AppCompatActivity() {
 
     private lateinit var btnBack: ImageButton
+    private lateinit var btnFavorite: ImageButton
     private lateinit var ivStarImage: ImageView
     private lateinit var tvTitle: TextView
     private lateinit var tvSubtitle: TextView
@@ -31,17 +41,22 @@ class StarDetailActivity : AppCompatActivity() {
     private lateinit var tvRaDec: TextView
     private lateinit var tvDescription: TextView
     private lateinit var tvAlsoKnown: TextView
+    private var starId: Long = -1L
+    private var isFavorite = false
+    private var favoriteBusy = false
 
     private val viewModel: StarDetailViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ApiClient.init(this)
         enableEdgeToEdge()
         setContentView(R.layout.activity_star_detail)
 
         val root = findViewById<View>(R.id.starDetailRoot)
 
         btnBack = findViewById(R.id.btnBack)
+        btnFavorite = findViewById(R.id.btnFavorite)
         ivStarImage = findViewById(R.id.ivStarImage)
         tvTitle = findViewById(R.id.tvTitle)
         tvSubtitle = findViewById(R.id.tvSubtitle)
@@ -67,7 +82,11 @@ class StarDetailActivity : AppCompatActivity() {
             finish()
         }
 
-        val starId = intent.getLongExtra("star_id", -1L)
+        btnFavorite.setOnClickListener {
+            toggleFavorite()
+        }
+
+        starId = intent.getLongExtra("star_id", -1L)
         val starName = intent.getStringExtra("star_name").orEmpty()
 
         tvTitle.text = starName
@@ -156,6 +175,7 @@ class StarDetailActivity : AppCompatActivity() {
 
         if (starId != -1L) {
             viewModel.loadDetail(starId)
+            loadFavoriteState()
         } else {
             tvSubtitle.text = "Invalid star ID"
             tvDescription.text = "No star detail could be loaded."
@@ -171,5 +191,74 @@ class StarDetailActivity : AppCompatActivity() {
         if (path == null) return null
         return if (path.startsWith("http")) path
         else "${ApiConfig.BASE_URL}$path"
+    }
+
+    private fun loadFavoriteState() {
+        if (!ApiClient.getSessionStorage().isLoggedIn()) {
+            setFavoriteState(false)
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val favorites = ApiClient.favoriteApi.getFavorites()
+                setFavoriteState(favorites.any { it.spaceObject.id == starId })
+            } catch (_: Exception) {
+                setFavoriteState(false)
+            }
+        }
+    }
+
+    private fun toggleFavorite() {
+        if (starId == -1L || favoriteBusy) return
+
+        if (!ApiClient.getSessionStorage().isLoggedIn()) {
+            showAppMessage("Log in to save favorites.", MessageKind.INFO)
+            startActivity(Intent(this, AuthActivity::class.java))
+            return
+        }
+
+        lifecycleScope.launch {
+            favoriteBusy = true
+            btnFavorite.isEnabled = false
+
+            try {
+                if (isFavorite) {
+                    val response = ApiClient.favoriteApi.removeFavorite(starId)
+                    if (!response.isSuccessful && response.code() != 404) {
+                        throw HttpException(response)
+                    }
+
+                    setFavoriteState(false)
+                    showAppMessage("Removed from favorites.", MessageKind.SUCCESS)
+                } else {
+                    ApiClient.favoriteApi.addFavorite(FavoriteRequest(spaceObjectId = starId))
+                    setFavoriteState(true)
+                    showAppMessage("Added to favorites.", MessageKind.SUCCESS)
+                }
+            } catch (e: HttpException) {
+                showAppMessage(
+                    ApiErrorMapper.fromHttpException(e, "Could not update favorites."),
+                    MessageKind.ERROR
+                )
+            } catch (e: IOException) {
+                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
+            } finally {
+                favoriteBusy = false
+                btnFavorite.isEnabled = true
+            }
+        }
+    }
+
+    private fun setFavoriteState(value: Boolean) {
+        isFavorite = value
+        btnFavorite.setImageResource(
+            if (value) R.drawable.ic_star_filled else R.drawable.ic_star_outline
+        )
+        btnFavorite.contentDescription = if (value) {
+            "Remove from favorites"
+        } else {
+            "Add to favorites"
+        }
     }
 }

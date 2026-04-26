@@ -6,12 +6,14 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.api.ApiClient
+import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.data.model.enums.UserRole
 import com.codepalace.accelerometer.repository.AuthRepository
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -69,7 +71,7 @@ class SignupActivity : AppCompatActivity() {
                     etSignupRepeatPassword.error = "Passwords do not match"
 
                 role == null ->
-                    Toast.makeText(this, "Select role", Toast.LENGTH_SHORT).show()
+                    showAppMessage("Select your role.", MessageKind.ERROR)
 
                 else -> doSignup(
                     email = email,
@@ -100,19 +102,26 @@ class SignupActivity : AppCompatActivity() {
                     token = response.token,
                     role = response.role.name,
                     displayName = response.displayName,
-                    userId = response.userId
+                    userId = response.userId,
+                    provider = "LOCAL"
                 )
 
-                Toast.makeText(this@SignupActivity, "Registration successful", Toast.LENGTH_SHORT).show()
+                showAppMessage("Account created successfully.", MessageKind.SUCCESS)
                 startActivity(Intent(this@SignupActivity, MainActivity::class.java))
                 finishAffinity()
 
             } catch (e: HttpException) {
-                Toast.makeText(this@SignupActivity, "Registration failed: ${e.code()}", Toast.LENGTH_LONG).show()
-            } catch (_: IOException) {
-                Toast.makeText(this@SignupActivity, "Network error", Toast.LENGTH_LONG).show()
+                showAppMessage(
+                    ApiErrorMapper.fromHttpException(
+                        e,
+                        "Could not create account. This email may already be registered."
+                    ),
+                    MessageKind.ERROR
+                )
+            } catch (e: IOException) {
+                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
             } catch (e: Exception) {
-                Toast.makeText(this@SignupActivity, e.message ?: "Unexpected error", Toast.LENGTH_LONG).show()
+                showAppMessage(ApiErrorMapper.fromThrowable(e), MessageKind.ERROR)
             }
         }
     }

@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.RadioGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.api.ApiClient
+import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.api.dto.CompleteGoogleRequest
 import com.codepalace.accelerometer.data.model.enums.UserRole
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -49,7 +51,7 @@ class GoogleCompleteActivity : AppCompatActivity() {
                     etDisplayName.error = "Minimum 3 characters"
                 }
                 role == null -> {
-                    Toast.makeText(this, "Select role", Toast.LENGTH_SHORT).show()
+                    showAppMessage("Select your role.", MessageKind.ERROR)
                 }
                 else -> {
                     completeGoogle(displayName, role)
@@ -62,7 +64,7 @@ class GoogleCompleteActivity : AppCompatActivity() {
         val pendingToken = ApiClient.getSessionStorage().getPendingGoogleToken()
 
         if (pendingToken.isNullOrBlank()) {
-            Toast.makeText(this, "Pending Google token not found", Toast.LENGTH_LONG).show()
+            showAppMessage("Google session expired. Try signing in again.", MessageKind.ERROR)
             return
         }
 
@@ -80,20 +82,24 @@ class GoogleCompleteActivity : AppCompatActivity() {
                     token = response.token,
                     role = response.role.name,
                     displayName = response.displayName,
-                    userId = response.userId
+                    userId = response.userId,
+                    provider = "GOOGLE"
                 )
                 ApiClient.getSessionStorage().clearPendingGoogleToken()
 
-                Toast.makeText(this@GoogleCompleteActivity, "Google registration completed", Toast.LENGTH_SHORT).show()
+                showAppMessage("Google registration completed.", MessageKind.SUCCESS)
                 startActivity(Intent(this@GoogleCompleteActivity, MainActivity::class.java))
                 finishAffinity()
 
             } catch (e: HttpException) {
-                Toast.makeText(this@GoogleCompleteActivity, "Complete failed: ${e.code()}", Toast.LENGTH_LONG).show()
-            } catch (_: IOException) {
-                Toast.makeText(this@GoogleCompleteActivity, "Network error", Toast.LENGTH_LONG).show()
+                showAppMessage(
+                    ApiErrorMapper.fromHttpException(e, "Could not complete Google registration."),
+                    MessageKind.ERROR
+                )
+            } catch (e: IOException) {
+                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
             } catch (e: Exception) {
-                Toast.makeText(this@GoogleCompleteActivity, e.message ?: "Unexpected error", Toast.LENGTH_LONG).show()
+                showAppMessage(ApiErrorMapper.fromThrowable(e), MessageKind.ERROR)
             }
         }
     }

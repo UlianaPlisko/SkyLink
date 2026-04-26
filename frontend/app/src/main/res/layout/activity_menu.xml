@@ -72,6 +72,13 @@
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
 
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_profile"
+                />
+
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -80,12 +87,11 @@
                 android:textColor="@color/dark_blue"
                 android:textSize="20sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/dark_blue"
-                android:textSize="28sp" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="21dp"
+                android:contentDescription="Open profile"
+                android:src="@drawable/ic_arrow_right" />
         </LinearLayout>
 
         <LinearLayout
@@ -96,7 +102,13 @@
             android:background="@drawable/bg_menu_item"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="12dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="9dp"
+                android:src="@drawable/ic_sky_cultures" />
 
             <TextView
                 android:layout_width="0dp"
@@ -106,12 +118,11 @@
                 android:textColor="@color/dark_blue"
                 android:textSize="20sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/dark_blue"
-                android:textSize="28sp" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="21dp"
+                android:contentDescription="Open sky cultures"
+                android:src="@drawable/ic_arrow_right" />
         </LinearLayout>
 
         <LinearLayout
@@ -122,7 +133,14 @@
             android:background="@drawable/bg_menu_item"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="13dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_settings"
+                />
 
             <TextView
                 android:layout_width="0dp"
@@ -132,12 +150,11 @@
                 android:textColor="@color/dark_blue"
                 android:textSize="20sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/dark_blue"
-                android:textSize="28sp" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="21dp"
+                android:contentDescription="Open settings"
+                android:src="@drawable/ic_arrow_right" />
         </LinearLayout>
 
         <LinearLayout
@@ -158,12 +175,11 @@
                 android:textColor="@color/dark_blue"
                 android:textSize="20sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/dark_blue"
-                android:textSize="28sp" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="21dp"
+                android:contentDescription="Open authentication"
+                android:src="@drawable/ic_arrow_right" />
         </LinearLayout>
 
         <LinearLayout
@@ -184,12 +200,11 @@
                 android:textColor="@color/dark_blue"
                 android:textSize="20sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/dark_blue"
-                android:textSize="28sp" />
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="21dp"
+                android:contentDescription="Log out"
+                android:src="@drawable/ic_arrow_right" />
         </LinearLayout>
 
     </LinearLayout>

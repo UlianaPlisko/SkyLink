@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.dto.GoogleAuthRequest
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -74,34 +76,40 @@ class AuthActivity : AppCompatActivity() {
                                 token = response.token,
                                 role = response.role?.name ?: "OBSERVER",
                                 displayName = response.displayName ?: "Google user",
-                                userId = response.userId ?: -1L
+                                userId = response.userId ?: -1L,
+                                provider = "GOOGLE"
                             )
 
-                            Toast.makeText(this@AuthActivity, "Google login successful", Toast.LENGTH_SHORT).show()
+                            showAppMessage("Google login successful.", MessageKind.SUCCESS)
                             startActivity(Intent(this@AuthActivity, MainActivity::class.java))
                             finishAffinity()
                         }
 
                     } catch (e: HttpException) {
                         e.printStackTrace()
-                        Toast.makeText(this@AuthActivity, "HTTP ${e.code()}", Toast.LENGTH_LONG).show()
+                        showAppMessage(
+                            ApiErrorMapper.fromHttpException(
+                                e,
+                                "Google sign-in is unavailable right now."
+                            ),
+                            MessageKind.ERROR
+                        )
                     } catch (e: IOException) {
                         e.printStackTrace()
-                        Toast.makeText(this@AuthActivity, "IO: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+                        showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        Toast.makeText(this@AuthActivity, "EX: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+                        showAppMessage(ApiErrorMapper.fromThrowable(e), MessageKind.ERROR)
                     }
                 }
                 .onFailure { e ->
                     e.printStackTrace()
                     Log.e("GOOGLE_AUTH", "Google sign-in failed", e)
 
-                    Toast.makeText(
-                        this@AuthActivity,
-                        "${e.javaClass.simpleName}: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showAppMessage(
+                        ApiErrorMapper.fromThrowable(e, "Google sign-in was cancelled or failed."),
+                        MessageKind.ERROR
+                    )
                 }
         }
     }

@@ -1,5 +1,5 @@
 package com.codepalace.accelerometer.config
 
 object ApiConfig {
-    const val BASE_URL = "http://147.175.163.2:8080"
+    const val BASE_URL = "http://10.102.154.99:8080"
 }

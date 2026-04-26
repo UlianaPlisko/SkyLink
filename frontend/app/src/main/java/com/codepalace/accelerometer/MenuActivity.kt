@@ -4,11 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.codepalace.accelerometer.api.ApiClient
 import android.widget.ImageButton
+import com.codepalace.accelerometer.ui.MessageKind
+import com.codepalace.accelerometer.ui.showAppMessage
 class MenuActivity : AppCompatActivity() {
 
     private lateinit var btnBack: ImageButton
@@ -38,18 +38,19 @@ class MenuActivity : AppCompatActivity() {
 
         itemProfile.setOnClickListener {
             if (ApiClient.getSessionStorage().isLoggedIn()) {
-                //ProfileActivity
+                startActivity(Intent(this, ProfileActivity::class.java))
             } else {
+                showAppMessage("Log in to open your profile.", MessageKind.INFO)
                 startActivity(Intent(this, AuthActivity::class.java))
             }
         }
 
         itemSkyCultures.setOnClickListener {
-            Toast.makeText(this, "Sky Cultures later", Toast.LENGTH_SHORT).show()
+            showAppMessage("Sky cultures will be available soon.", MessageKind.INFO)
         }
 
         itemSettings.setOnClickListener {
-            Toast.makeText(this, "Settings later", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         itemAuthentication.setOnClickListener {
@@ -58,7 +59,7 @@ class MenuActivity : AppCompatActivity() {
 
         itemLogout.setOnClickListener {
             ApiClient.getSessionStorage().clearAuth()
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+            showAppMessage("Logged out.", MessageKind.SUCCESS)
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
