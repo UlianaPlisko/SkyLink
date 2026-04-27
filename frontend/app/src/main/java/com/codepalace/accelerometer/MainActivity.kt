@@ -159,7 +159,37 @@ class MainActivity : AppCompatActivity() {
             selectedStar = star
             tvPreviewName.text = star.name
             tvPreviewType.text = "Tap to view details"
-            starPreviewPanel.visibility = View.VISIBLE
+            if (!starPreviewPanel.isVisible) {
+                starPreviewPanel.visibility = View.VISIBLE
+                starPreviewPanel.startAnimation(
+                    android.view.animation.AnimationUtils.loadAnimation(
+                        this,
+                        R.anim.slide_up_soft
+                    )
+                )
+            }
+        }
+
+        skyView.onEmptySpaceClick = {
+            if (starPreviewPanel.isVisible) {
+                val anim = android.view.animation.AnimationUtils.loadAnimation(
+                    this,
+                    R.anim.slide_down_soft
+                )
+
+                anim.setAnimationListener(object : android.view.animation.Animation.AnimationListener {
+                    override fun onAnimationStart(animation: android.view.animation.Animation?) {}
+
+                    override fun onAnimationEnd(animation: android.view.animation.Animation?) {
+                        starPreviewPanel.visibility = View.GONE
+                        selectedStar = null
+                    }
+
+                    override fun onAnimationRepeat(animation: android.view.animation.Animation?) {}
+                })
+
+                starPreviewPanel.startAnimation(anim)
+            }
         }
 
         starPreviewPanel.setOnClickListener {

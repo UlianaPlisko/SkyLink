@@ -104,17 +104,7 @@ class SkyView @JvmOverloads constructor(
             invalidate()
         }
 
-    var phonePitch: Float = 0f
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    var phoneRoll: Float = 0f
-        set(value) {
-            field = value
-            invalidate()
-        }
+    var onEmptySpaceClick: (() -> Unit)? = null
 
     var fovHorizontal: Float = 90f
         set(value) {
@@ -335,9 +325,12 @@ class SkyView @JvmOverloads constructor(
 
             if (tapped != null) {
                 onStarClick?.invoke(tapped.star)
-                performClick()
-                return true
+            } else {
+                onEmptySpaceClick?.invoke()   // 👈 ADD THIS
             }
+
+            performClick()
+            return true
         }
 
         return true

@@ -46,7 +46,7 @@ class MenuActivity : AppCompatActivity() {
         }
 
         itemSkyCultures.setOnClickListener {
-            showAppMessage("Sky cultures will be available soon.", MessageKind.INFO)
+            startActivity(Intent(this, SkyCulturesActivity::class.java))
         }
 
         itemSettings.setOnClickListener {

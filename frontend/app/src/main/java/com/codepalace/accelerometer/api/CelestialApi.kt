@@ -2,8 +2,10 @@ package com.codepalace.accelerometer.api
 
 import com.codepalace.accelerometer.data.model.SpaceObjectDetail
 import com.codepalace.accelerometer.data.model.SpaceObjectSummary
+import com.codepalace.accelerometer.data.model.dto.ConstellationCultureResponse
 import com.codepalace.accelerometer.data.model.dto.WikiResponse
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -20,4 +22,10 @@ interface CelestialApi {
 
     @GET("/api/celestial/space-objects/{id}/wiki")
     suspend fun getSpaceObjectWiki(@Path("id") id: Long): WikiResponse
+
+    @GET("/api/celestial/cultures")
+    suspend fun getAllCultures(): List<ConstellationCultureResponse>
+
+    @PUT("/api/celestial/cultures/{id}/current")
+    suspend fun setCurrentCulture(@Path("id") id: Long): Unit
 }

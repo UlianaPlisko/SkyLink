@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -41,6 +42,8 @@ class StarDetailActivity : AppCompatActivity() {
     private lateinit var tvRaDec: TextView
     private lateinit var tvDescription: TextView
     private lateinit var tvAlsoKnown: TextView
+
+    private lateinit var pbImageLoading: ProgressBar
     private var starId: Long = -1L
     private var isFavorite = false
     private var favoriteBusy = false
@@ -66,6 +69,8 @@ class StarDetailActivity : AppCompatActivity() {
         tvRaDec = findViewById(R.id.tvRaDec)
         tvDescription = findViewById(R.id.tvDescription)
         tvAlsoKnown = findViewById(R.id.tvAlsoKnown)
+        pbImageLoading = findViewById(R.id.pbImageLoading)
+
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -150,12 +155,27 @@ class StarDetailActivity : AppCompatActivity() {
                             val imageUrl = resolveUrl(detail.imageUrl)
 
                             if (!imageUrl.isNullOrBlank()) {
+                                pbImageLoading.visibility = View.VISIBLE
+                                ivStarImage.setImageDrawable(null) // important: no placeholder
+
                                 ivStarImage.load(imageUrl) {
                                     crossfade(true)
-                                    placeholder(R.drawable.space_object_placeholder)
-                                    error(R.drawable.space_object_placeholder)
+
+                                    listener(
+                                        onStart = {
+                                            pbImageLoading.visibility = View.VISIBLE
+                                        },
+                                        onSuccess = { _, _ ->
+                                            pbImageLoading.visibility = View.GONE
+                                        },
+                                        onError = { _, _ ->
+                                            pbImageLoading.visibility = View.GONE
+                                            ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+                                        }
+                                    )
                                 }
                             } else {
+                                pbImageLoading.visibility = View.GONE
                                 ivStarImage.setImageResource(R.drawable.space_object_placeholder)
                             }
                         }
@@ -167,6 +187,8 @@ class StarDetailActivity : AppCompatActivity() {
                         if (error != null) {
                             tvSubtitle.text = error
                             tvDescription.text = "Could not load data from backend."
+                            pbImageLoading.visibility = View.GONE
+                            ivStarImage.setImageResource(R.drawable.space_object_placeholder)
                         }
                     }
                 }

@@ -66,20 +66,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             if (cached.isNotEmpty()) {
-                Log.d(TAG, "✅ Found ${cached.size} cached objects → projecting bright stars")
+                Log.d(TAG, "✅ Using ${cached.size} cached objects (NO network call)")
                 projectAndUpdateUI(cached)
-            } else {
-                Log.d(TAG, "⚠️ Cache is empty on first launch")
+
+                _isLoading.value = false
+                return@launch   // 🔥 THIS LINE STOPS NETWORK CALL
             }
+
+            Log.d(TAG, "🌐 Cache empty → fetching from backend")
 
             val success = repository.refreshAllObjects()
 
             if (success) {
-                Log.d(TAG, "✅ Backend refresh successful → reloading fresh data")
                 val fresh = repository.getCachedObjects().first()
+                Log.d(TAG, "✅ Loaded ${fresh.size} objects from backend")
                 projectAndUpdateUI(fresh)
             } else {
-                Log.w(TAG, "⚠️ No internet or backend error → keeping cache (if any)")
+                Log.w(TAG, "❌ Backend failed and no cache available")
             }
 
             _isLoading.value = false

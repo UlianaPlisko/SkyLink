@@ -27,6 +27,7 @@
         <activity android:name=".LocationSettingsActivity" />
         <activity android:name=".GoogleCompleteActivity" />
         <activity android:name=".FavoritesActivity" />
+        <activity android:name=".SkyCulturesActivity" />
 
 <!--        <activity-->
 <!--            android:name=".ui.view.MenuActivity"-->

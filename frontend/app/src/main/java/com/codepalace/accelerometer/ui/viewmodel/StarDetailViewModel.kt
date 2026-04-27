@@ -39,28 +39,39 @@ class StarDetailViewModel(application: Application) : AndroidViewModel(applicati
             _isLoading.value = true
             _error.value = null
 
+            val cached = repository.getCachedDetail(id)
+            if (cached != null) {
+                _detail.value = cached
+                Log.d(TAG, "Loaded detail from cache for id=$id")
+            }
+
             try {
                 val result = repository.getSpaceObjectDetail(id)
-                _detail.value = result
-                Log.d(TAG, "Loaded base detail for id=$id: ${result.displayName}")
 
                 val wiki = repository.getSpaceObjectWiki(id)
-                if (wiki != null) {
-                    _detail.value = result.copy(
+
+                val finalDetail = if (wiki != null) {
+                    result.copy(
                         wikiSummary = wiki.summary,
                         wikiUrl = wiki.url,
                         imageUrl = wiki.imageUrl
                     )
-
-                    Log.d(TAG, "Updated detail imageUrl for id=$id: ${_detail.value?.imageUrl}")
-                    Log.d(TAG, "Loaded wiki info for id=$id")
                 } else {
-                    Log.d(TAG, "No wiki info available for id=$id")
+                    result
                 }
 
+                _detail.value = finalDetail
+
+                repository.saveDetail(finalDetail)
+
+                Log.d(TAG, "Loaded detail from API and cached for id=$id")
+
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to load detail for id=$id", e)
-                _error.value = "Failed to load details"
+                Log.e(TAG, "Network failed for id=$id", e)
+
+                if (cached == null) {
+                    _error.value = "No internet and no cached data available"
+                }
             } finally {
                 _isLoading.value = false
             }
