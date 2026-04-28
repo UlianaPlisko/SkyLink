@@ -23,11 +23,14 @@
         <activity android:name=".MenuActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".SettingsActivity" />
+        <activity android:name=".CalendarActivity"
+            tools:targetApi="26" />
         <activity android:name=".AccountSettingsActivity" />
         <activity android:name=".LocationSettingsActivity" />
         <activity android:name=".GoogleCompleteActivity" />
         <activity android:name=".FavoritesActivity" />
         <activity android:name=".SkyCulturesActivity" />
+
 
 <!--        <activity-->
 <!--            android:name=".ui.view.MenuActivity"-->

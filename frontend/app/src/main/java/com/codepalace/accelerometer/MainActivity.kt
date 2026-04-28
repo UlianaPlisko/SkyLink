@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnCalendar.setOnClickListener {
-            showAppMessage("Calendar will be available soon.", MessageKind.INFO)
+            startActivity(Intent(this, CalendarActivity::class.java))
         }
 
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
