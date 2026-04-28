@@ -9,8 +9,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -35,6 +38,9 @@ import kotlinx.coroutines.launch
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.sensors.CompassController
@@ -42,6 +48,7 @@ import com.codepalace.accelerometer.ui.view.HalfCompassView
 import com.codepalace.accelerometer.ui.view.StarDetailActivity
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import com.codepalace.accelerometer.util.SearchResultAdapter
 
 class MainActivity : AppCompatActivity() {
 
@@ -82,6 +89,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private lateinit var searchOverlay: androidx.constraintlayout.widget.ConstraintLayout
+    private lateinit var searchInput: EditText
+    private lateinit var btnSearchClose: android.widget.ImageButton
+    private lateinit var btnSearchClear: android.widget.ImageButton
+    private lateinit var rvSearchResults: RecyclerView
+    private lateinit var tvSearchEmpty: android.widget.TextView
+    private lateinit var searchAdapter: SearchResultAdapter
+
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -115,15 +130,68 @@ class MainActivity : AppCompatActivity() {
         tvPreviewName = findViewById(R.id.tvPreviewName)
         tvPreviewType = findViewById(R.id.tvPreviewType)
 
+        searchOverlay    = findViewById(R.id.searchOverlay)
+        searchInput      = findViewById(R.id.searchInput)
+        btnSearchClose   = findViewById(R.id.btnSearchClose)
+        btnSearchClear   = findViewById(R.id.btnSearchClear)
+        rvSearchResults  = findViewById(R.id.rvSearchResults)
+        tvSearchEmpty    = findViewById(R.id.tvSearchEmpty)
+
+        // Adapter
+        searchAdapter = SearchResultAdapter { result ->
+            viewModel.closeSearch()
+
+            val intent = Intent(this, StarDetailActivity::class.java).apply {
+                putExtra("star_id", result.id)
+                putExtra("star_name", result.displayName)
+            }
+            startActivity(intent)
+        }
+
+        rvSearchResults.layoutManager = LinearLayoutManager(this)
+        rvSearchResults.adapter = searchAdapter
+
         updateCurrentTime()
 
         btnMenu.setOnClickListener {
             startActivity(Intent(this, MenuActivity::class.java))
         }
 
+        // Open search
         btnSearch.setOnClickListener {
-            showAppMessage("Search will be available soon.", MessageKind.INFO)
+            viewModel.openSearch()
         }
+
+        // Close search
+        btnSearchClose.setOnClickListener {
+            viewModel.closeSearch()
+        }
+
+        // Clear input
+        btnSearchClear.setOnClickListener {
+            searchInput.text.clear()
+        }
+
+        // Text changes → ViewModel
+        searchInput.doAfterTextChanged { editable ->
+            val text = editable?.toString() ?: ""
+            btnSearchClear.isVisible = text.isNotEmpty()
+            viewModel.onSearchQueryChanged(text)
+        }
+
+        // Dismiss overlay on back press
+        onBackPressedDispatcher.addCallback(this,
+            object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (viewModel.isSearchVisible.value) {
+                        viewModel.closeSearch()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            }
+        )
 
         btnChat.setOnClickListener {
             showAppMessage("Chat will be available soon.", MessageKind.INFO)
@@ -222,25 +290,37 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.stars.collect         { stars   -> skyView.stars          = stars  } }
+                launch { viewModel.fovHorizontal.collect { fov     -> skyView.fovHorizontal  = fov    } }
+                launch { viewModel.isLoading.collect     { loading -> loadingOverlay.isVisible = loading } }
+
+                // Search overlay visibility + keyboard
                 launch {
-                    viewModel.stars.collect { stars ->
-                        skyView.stars = stars
+                    viewModel.isSearchVisible.collect { visible ->
+                        searchOverlay.isVisible = visible
+                        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                        if (visible) {
+                            searchInput.requestFocus()
+                            imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
+                        } else {
+                            searchInput.clearFocus()
+                            imm.hideSoftInputFromWindow(searchInput.windowToken, 0)
+                        }
                     }
                 }
 
+                // Search results
                 launch {
-                    viewModel.fovHorizontal.collect { newFov ->
-                        skyView.fovHorizontal = newFov
-                    }
-                }
-
-                launch {
-                    viewModel.isLoading.collect { isLoading ->
-                        loadingOverlay.isVisible = isLoading
+                    viewModel.searchResults.collect { results ->
+                        searchAdapter.submitList(results)
+                        val hasQuery  = viewModel.searchQuery.value.isNotBlank()
+                        rvSearchResults.isVisible = results.isNotEmpty()
+                        tvSearchEmpty.isVisible   = results.isEmpty() && hasQuery
                     }
                 }
             }
         }
+
 
         orientationHelper = OrientationHelper(this)
         orientationHelper.onOrientationChanged = { _, pitch, _ ->

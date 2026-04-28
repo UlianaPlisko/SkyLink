@@ -12,6 +12,8 @@ import com.codepalace.accelerometer.data.local.SpaceObjectEntity
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.data.repository.CelestialRepository
 import com.codepalace.accelerometer.util.CelestialConverter
+import com.codepalace.accelerometer.util.SearchManager
+import com.codepalace.accelerometer.util.SearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +45,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var currentZoomLevel: Float = 1.0f          // 1.0 = default (90° FOV)
     private val baseFovHorizontal = 90f
     private val baseMaxMagnitude = 3.0
+
+    private val searchManager = SearchManager()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<SearchResult>>(emptyList())
+    val searchResults: StateFlow<List<SearchResult>> = _searchResults.asStateFlow()
+
+    private val _isSearchVisible = MutableStateFlow(false)
+    val isSearchVisible: StateFlow<Boolean> = _isSearchVisible.asStateFlow()
 
     private val _fovHorizontal = MutableStateFlow(baseFovHorizontal)
     val fovHorizontal: StateFlow<Float> = _fovHorizontal.asStateFlow()
@@ -173,5 +186,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val cached = repository.getCachedObjects().first()
             projectAndUpdateUI(cached)
         }
+    }
+
+    /** Called when the user types in the search bar. */
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+        viewModelScope.launch {
+            val allObjects = repository.getCachedObjects().first()
+            _searchResults.value = if (query.isBlank()) {
+                emptyList()
+            } else {
+                searchManager.search(query, allObjects)
+            }
+        }
+    }
+
+    /** Opens the search overlay. */
+    fun openSearch() {
+        _isSearchVisible.value = true
+    }
+
+    /** Closes the search overlay and clears results. */
+    fun closeSearch() {
+        _isSearchVisible.value = false
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
     }
 }
