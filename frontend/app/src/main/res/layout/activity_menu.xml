@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_blue">
+    android:background="@color/color_primary">
 
     <RelativeLayout
         android:id="@+id/headerBar"
@@ -29,7 +29,7 @@
             android:contentDescription="Back"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            android:tint="@color/accent_gold" />
+            android:tint="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvMenuTitle"
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Menu"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="28sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -46,7 +46,7 @@
         android:id="@+id/headerDivider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@color/accent_gold"
+        android:background="@color/color_accent"
         app:layout_constraintTop_toBottomOf="@id/headerBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -67,7 +67,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_menu_item"
+            android:background="@drawable/bg_card_menu"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
@@ -84,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="My Profile"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="20sp" />
 
             <ImageView
@@ -99,7 +99,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_menu_item"
+            android:background="@drawable/bg_card_menu"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="12dp">
@@ -115,7 +115,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Sky Cultures"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="20sp" />
 
             <ImageView
@@ -130,7 +130,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_menu_item"
+            android:background="@drawable/bg_card_menu"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="13dp">
@@ -147,7 +147,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Settings"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="20sp" />
 
             <ImageView
@@ -162,7 +162,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_menu_item"
+            android:background="@drawable/bg_card_menu"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
@@ -172,7 +172,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Authentication"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="20sp" />
 
             <ImageView
@@ -187,7 +187,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_menu_item"
+            android:background="@drawable/bg_card_menu"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
@@ -197,7 +197,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Logout"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="20sp" />
 
             <ImageView

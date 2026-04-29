@@ -1,4 +1,4 @@
-package com.codepalace.accelerometer.ui.view
+package com.codepalace.accelerometer.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
@@ -16,12 +16,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
-import com.codepalace.accelerometer.AuthActivity
+import coil.request.CachePolicy
 import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.api.dto.FavoriteRequest
 import com.codepalace.accelerometer.config.ApiConfig
+import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.local.SpaceObjectImageCache
+import com.codepalace.accelerometer.data.repository.FavoriteRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.ui.viewmodel.StarDetailViewModel
@@ -29,6 +32,7 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
+@Suppress("DEPRECATION")
 class StarDetailActivity : AppCompatActivity() {
 
     private lateinit var btnBack: ImageButton
@@ -47,6 +51,8 @@ class StarDetailActivity : AppCompatActivity() {
     private var starId: Long = -1L
     private var isFavorite = false
     private var favoriteBusy = false
+    private lateinit var favoriteRepository: FavoriteRepository
+    private lateinit var spaceObjectImageCache: SpaceObjectImageCache
 
     private val viewModel: StarDetailViewModel by viewModels()
 
@@ -55,6 +61,12 @@ class StarDetailActivity : AppCompatActivity() {
         ApiClient.init(this)
         enableEdgeToEdge()
         setContentView(R.layout.activity_star_detail)
+        spaceObjectImageCache = SpaceObjectImageCache(this)
+        favoriteRepository = FavoriteRepository(
+            favoriteApi = ApiClient.favoriteApi,
+            celestialApi = ApiClient.celestialApi,
+            database = AppDatabase.getDatabase(this)
+        )
 
         val root = findViewById<View>(R.id.starDetailRoot)
 
@@ -150,34 +162,7 @@ class StarDetailActivity : AppCompatActivity() {
                                 else -> ""
                             }
 
-                            android.util.Log.d("StarDetailActivity", "detail.imageUrl = ${detail.imageUrl}")
-
-                            val imageUrl = resolveUrl(detail.imageUrl)
-
-                            if (!imageUrl.isNullOrBlank()) {
-                                pbImageLoading.visibility = View.VISIBLE
-                                ivStarImage.setImageDrawable(null) // important: no placeholder
-
-                                ivStarImage.load(imageUrl) {
-                                    crossfade(true)
-
-                                    listener(
-                                        onStart = {
-                                            pbImageLoading.visibility = View.VISIBLE
-                                        },
-                                        onSuccess = { _, _ ->
-                                            pbImageLoading.visibility = View.GONE
-                                        },
-                                        onError = { _, _ ->
-                                            pbImageLoading.visibility = View.GONE
-                                            ivStarImage.setImageResource(R.drawable.space_object_placeholder)
-                                        }
-                                    )
-                                }
-                            } else {
-                                pbImageLoading.visibility = View.GONE
-                                ivStarImage.setImageResource(R.drawable.space_object_placeholder)
-                            }
+                            showSpaceObjectImage(detail.id, detail.imageUrl)
                         }
                     }
                 }
@@ -215,6 +200,56 @@ class StarDetailActivity : AppCompatActivity() {
         else "${ApiConfig.BASE_URL}$path"
     }
 
+    private fun showSpaceObjectImage(spaceObjectId: Long, rawImageUrl: String?) {
+        spaceObjectImageCache.getImage(spaceObjectId)?.let { cachedImage ->
+            pbImageLoading.visibility = View.GONE
+            ivStarImage.load(cachedImage) {
+                crossfade(true)
+                listener(
+                    onSuccess = { _, _ -> pbImageLoading.visibility = View.GONE },
+                    onError = { _, _ ->
+                        pbImageLoading.visibility = View.GONE
+                        ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+                    }
+                )
+            }
+            return
+        }
+
+        val imageUrl = resolveUrl(rawImageUrl)
+        if (imageUrl.isNullOrBlank()) {
+            pbImageLoading.visibility = View.GONE
+            ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+            return
+        }
+
+        pbImageLoading.visibility = View.VISIBLE
+        ivStarImage.setImageDrawable(null)
+
+        ivStarImage.load(imageUrl) {
+            crossfade(true)
+            diskCachePolicy(CachePolicy.ENABLED)
+            memoryCachePolicy(CachePolicy.ENABLED)
+
+            listener(
+                onStart = {
+                    pbImageLoading.visibility = View.VISIBLE
+                },
+                onSuccess = { _, _ ->
+                    pbImageLoading.visibility = View.GONE
+                },
+                onError = { _, _ ->
+                    pbImageLoading.visibility = View.GONE
+                    ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+                }
+            )
+        }
+
+        lifecycleScope.launch {
+            spaceObjectImageCache.downloadAndSave(spaceObjectId, imageUrl)
+        }
+    }
+
     private fun loadFavoriteState() {
         if (!ApiClient.getSessionStorage().isLoggedIn()) {
             setFavoriteState(false)
@@ -223,10 +258,10 @@ class StarDetailActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val favorites = ApiClient.favoriteApi.getFavorites()
+                val favorites = favoriteRepository.refreshFavorites()
                 setFavoriteState(favorites.any { it.spaceObject.id == starId })
             } catch (_: Exception) {
-                setFavoriteState(false)
+                setFavoriteState(favoriteRepository.isFavoriteCached(starId))
             }
         }
     }
@@ -246,15 +281,12 @@ class StarDetailActivity : AppCompatActivity() {
 
             try {
                 if (isFavorite) {
-                    val response = ApiClient.favoriteApi.removeFavorite(starId)
-                    if (!response.isSuccessful && response.code() != 404) {
-                        throw HttpException(response)
-                    }
-
+                    favoriteRepository.removeFavoriteOnline(starId)
                     setFavoriteState(false)
                     showAppMessage("Removed from favorites.", MessageKind.SUCCESS)
                 } else {
-                    ApiClient.favoriteApi.addFavorite(FavoriteRequest(spaceObjectId = starId))
+                    val favorite = ApiClient.favoriteApi.addFavorite(FavoriteRequest(spaceObjectId = starId))
+                    favoriteRepository.cacheFavorite(favorite)
                     setFavoriteState(true)
                     showAppMessage("Added to favorites.", MessageKind.SUCCESS)
                 }
@@ -264,7 +296,19 @@ class StarDetailActivity : AppCompatActivity() {
                     MessageKind.ERROR
                 )
             } catch (e: IOException) {
-                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
+                if (isFavorite) {
+                    favoriteRepository.removeFavoriteOffline(starId)
+                    setFavoriteState(false)
+                    showAppMessage(
+                        "Removed locally. It will sync when internet is back.",
+                        MessageKind.INFO
+                    )
+                } else {
+                    showAppMessage(
+                        "You are offline. Favorites can be added when internet is back.",
+                        MessageKind.INFO
+                    )
+                }
             } finally {
                 favoriteBusy = false
                 btnFavorite.isEnabled = true

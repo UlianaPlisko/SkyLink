@@ -62,7 +62,7 @@ class WeekDaysAdapter(
             tvDayNumber.text = weekDay.dayNumber
 
             if (isSelected) {
-                container.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.accent_gold))
+                container.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.color_accent))
                 tvDayName.setTextColor(Color.WHITE)
                 tvDayNumber.setTextColor(Color.WHITE)
             } else {

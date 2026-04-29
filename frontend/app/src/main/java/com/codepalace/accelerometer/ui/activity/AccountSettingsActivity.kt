@@ -1,5 +1,6 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
+import com.codepalace.accelerometer.R
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -61,8 +62,7 @@ class AccountSettingsActivity : AppCompatActivity() {
                 updatePasswordRow(profile.provider)
 
                 val session = ApiClient.getSessionStorage()
-                session.saveAuth(
-                    token = session.getToken().orEmpty(),
+                session.updateUserProfile(
                     role = profile.role.name,
                     displayName = profile.displayName,
                     userId = profile.id,

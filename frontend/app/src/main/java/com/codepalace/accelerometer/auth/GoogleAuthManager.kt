@@ -1,5 +1,4 @@
-package com.codepalace.accelerometer
-
+package com.codepalace.accelerometer.auth
 import android.app.Activity
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential

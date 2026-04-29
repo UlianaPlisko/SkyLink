@@ -1,5 +1,6 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
+import com.codepalace.accelerometer.R
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText

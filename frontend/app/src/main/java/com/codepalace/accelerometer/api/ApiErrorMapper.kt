@@ -16,7 +16,7 @@ object ApiErrorMapper {
 
         return when (exception.code()) {
             400 -> "Check the entered data and try again."
-            401, 403 -> "Wrong email or password."
+            401, 403 -> fallback
             409 -> "This account is already registered."
             else -> fallback
         }

@@ -9,6 +9,8 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.data.model.Star
 import kotlin.math.abs
 import kotlin.math.cos
@@ -27,9 +29,6 @@ class SkyView @JvmOverloads constructor(
         textSize = 30f
         textAlign = Paint.Align.CENTER
     }
-
-    private val skyBackgroundColor = Color.rgb(14, 26, 43)
-    private val redSkyBackgroundColor = Color.rgb(68, 12, 24)
 
     private val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -120,18 +119,14 @@ class SkyView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(if (redModeEnabled) redSkyBackgroundColor else skyBackgroundColor)
+        canvas.drawColor(ContextCompat.getColor(context, R.color.color_sky_background))
 
         if (width <= 0 || height <= 0) return
 
         val matrix = if (manualControlEnabled) {
             manualRotationMatrix()
         } else {
-            rotationMatrix
-        } ?: run {
-            clickableStars = emptyList()
-            drawCenteredDebug(canvas, "Waiting for orientation...")
-            return
+            rotationMatrix ?: manualRotationMatrix()
         }
 
         val centerX = width / 2f

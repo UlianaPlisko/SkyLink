@@ -1,23 +1,24 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.data.model.enums.UserRole
-import com.codepalace.accelerometer.repository.AuthRepository
+import com.codepalace.accelerometer.data.repository.AuthRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
-import android.widget.ImageButton
 
 class SignupActivity : AppCompatActivity() {
 

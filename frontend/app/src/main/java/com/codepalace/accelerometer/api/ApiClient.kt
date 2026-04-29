@@ -60,7 +60,7 @@ object ApiClient {
     }
 
     val authApi: AuthApi by lazy {
-        authRetrofit.create(AuthApi::class.java)
+        publicRetrofit.create(AuthApi::class.java)
     }
 
     val profileApi: ProfileApi by lazy {

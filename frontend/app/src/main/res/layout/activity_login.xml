@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_blue">
+    android:background="@color/color_primary">
 
     <RelativeLayout
         android:id="@+id/headerBar"
@@ -29,7 +29,7 @@
             android:contentDescription="Back"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            app:tint="@color/accent_gold" />
+            app:tint="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvHeaderTitle"
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Login"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="28sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -46,7 +46,7 @@
         android:id="@+id/headerDivider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@color/accent_gold"
+        android:background="@color/color_accent"
         app:layout_constraintTop_toBottomOf="@id/headerBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -74,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Welcome Back!"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="36sp"
                 android:textStyle="bold"
                 android:layout_marginTop="48dp"
@@ -85,7 +85,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Login to continue"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="16sp"
                 android:layout_marginTop="8dp"
                 android:layout_gravity="center_horizontal" />
@@ -95,7 +95,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Email"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="18sp"
                 android:layout_marginTop="48dp"
                 android:layout_gravity="center_horizontal" />
@@ -107,8 +107,8 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_auth_input"
                 android:paddingHorizontal="16dp"
-                android:textColor="@color/text_primary_light"
-                android:textColorHint="@color/text_primary_light"
+                android:textColor="@color/color_text_on_background"
+                android:textColorHint="@color/color_text_on_background"
                 android:inputType="text" />
 
             <TextView
@@ -116,7 +116,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Password"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="18sp"
                 android:layout_marginTop="28dp"
                 android:layout_gravity="center_horizontal" />
@@ -128,8 +128,8 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_auth_input"
                 android:paddingHorizontal="16dp"
-                android:textColor="@color/text_primary_light"
-                android:textColorHint="@color/text_primary_light"
+                android:textColor="@color/color_text_on_background"
+                android:textColorHint="@color/color_text_on_background"
                 android:inputType="textPassword" />
 
             <Button
@@ -142,7 +142,7 @@
                 app:backgroundTint="@null"
                 android:text="Login"
                 android:textAllCaps="false"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="24sp" />
 
             <LinearLayout
@@ -156,7 +156,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Don't have an account? "
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textSize="14sp" />
 
                 <TextView
@@ -164,7 +164,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Sign Up"
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textStyle="bold"
                     android:textSize="14sp" />
             </LinearLayout>

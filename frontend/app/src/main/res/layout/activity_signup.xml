@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_blue">
+    android:background="@color/color_primary">
 
     <RelativeLayout
         android:id="@+id/headerBar"
@@ -29,7 +29,7 @@
             android:contentDescription="Back"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            app:tint="@color/accent_gold" />
+            app:tint="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvHeaderTitle"
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Login"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="28sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -46,7 +46,7 @@
         android:id="@+id/headerDivider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@color/accent_gold"
+        android:background="@color/color_accent"
         app:layout_constraintTop_toBottomOf="@id/headerBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -75,7 +75,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Create Account Now!"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="32sp" />
 
             <TextView
@@ -125,7 +125,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:text="Select your role"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="20sp" />
 
             <RadioGroup
@@ -141,10 +141,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:buttonTint="@color/accent_gold"
+                    android:buttonTint="@color/color_accent"
                     android:gravity="center"
                     android:text="Observer"
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textSize="17sp" />
 
                 <RadioButton
@@ -153,10 +153,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="28dp"
                     android:layout_weight="1"
-                    android:buttonTint="@color/accent_gold"
+                    android:buttonTint="@color/color_accent"
                     android:gravity="center"
                     android:text="Contributor"
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textSize="17sp" />
             </RadioGroup>
 
@@ -170,7 +170,7 @@
                 android:background="@drawable/bg_auth_button"
                 android:text="Sign Up"
                 android:textAllCaps="false"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="24sp"
                 app:backgroundTint="@null" />
 
@@ -185,7 +185,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Already have an account? "
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textSize="16sp" />
 
                 <TextView
@@ -193,7 +193,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Login"
-                    android:textColor="@color/accent_gold"
+                    android:textColor="@color/color_accent"
                     android:textSize="16sp"
                     android:textStyle="bold" />
             </LinearLayout>

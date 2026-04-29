@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Main palette -->
+    <color name="color_primary">#22234C</color>
+    <color name="color_secondary">#4E5186</color>
+    <color name="color_secondary_variant">#5A5E99</color>
+    <color name="color_accent">#858163</color>
+    <color name="color_error">#8E3447</color>
+    <color name="color_placeholder_surface">#A7A7A7</color>
+    <color name="color_card_highlight_top">#99858163</color>
+    <color name="color_card_highlight_corner">#66858163</color>
+    <color name="color_card_border">#33858163</color>
+
+    <!-- Sky -->
+    <color name="color_sky_background">#0E1A2B</color>
+
+    <!-- Overlays -->
+    <color name="overlay_light">#99FFFFFF</color>
+    <color name="overlay_medium">#AAFFFFFF</color>
+    <color name="overlay_stroke">#66000000</color>
+
+    <!-- Text -->
+    <color name="color_text_on_background">#FFFFFF</color>
+    <color name="color_text_primary">#1E1E1E</color>
+    <color name="color_text_muted">#C9C9D6</color>
+
+    <!-- Loading overlay -->
+    <color name="loading_overlay">#66000000</color>
+</resources>

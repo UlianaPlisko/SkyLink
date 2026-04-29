@@ -14,12 +14,17 @@ class AuthInterceptor(
         val request = if (!token.isNullOrBlank()) {
             chain.request()
                 .newBuilder()
-                .addHeader("Authorization", "Bearer $token")
+                .header("Authorization", "Bearer $token")
                 .build()
         } else {
             chain.request()
         }
 
-        return chain.proceed(request)
+        val response = chain.proceed(request)
+        if (!token.isNullOrBlank() && (response.code == 401 || response.code == 403)) {
+            sessionStorage.clearAuth()
+        }
+
+        return response
     }
 }

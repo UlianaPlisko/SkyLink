@@ -4,7 +4,7 @@
     android:id="@+id/starDetailRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_blue"
+    android:background="@color/color_primary"
     android:fillViewport="true">
 
     <LinearLayout
@@ -30,7 +30,7 @@
                 android:contentDescription="Back"
                 android:padding="4dp"
                 android:src="@drawable/ic_back"
-                app:tint="@color/accent_gold" />
+                app:tint="@color/color_accent" />
 
             <TextView
                 android:id="@+id/tvTitle"
@@ -38,14 +38,14 @@
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:text="Capella"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="18sp" />
         </RelativeLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/accent_gold" />
+            android:background="@color/color_accent" />
 
         <FrameLayout
             android:layout_width="280dp"
@@ -68,7 +68,7 @@
                 android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:visibility="gone"
-                android:indeterminateTint="@color/blue" />
+                android:indeterminateTint="@color/color_secondary" />
 
         </FrameLayout>
 
@@ -86,7 +86,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Spectroscopic Binary"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="14sp" />
 
             <ImageButton
@@ -102,7 +102,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="10dp"
-            android:background="@color/accent_gold" />
+            android:background="@color/color_accent" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -114,7 +114,7 @@
                 android:id="@+id/tvConstellation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="14sp" />
 
             <TextView
@@ -122,7 +122,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="14sp" />
 
             <TextView
@@ -130,7 +130,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="14sp" />
 
             <TextView
@@ -138,14 +138,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/accent_gold"
+                android:textColor="@color/color_accent"
                 android:textSize="14sp" />
         </LinearLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/accent_gold" />
+            android:background="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvDescription"
@@ -153,20 +153,20 @@
             android:layout_height="wrap_content"
             android:padding="20dp"
             android:text="Example content"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="14sp" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/accent_gold" />
+            android:background="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvAlsoKnown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="20dp"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

@@ -52,8 +52,8 @@ class SkyCulturesAdapter(
 
         // Background - this should now work reliably
         holder.root.setBackgroundResource(
-            if (isCurrent) R.drawable.bg_selected_item
-            else R.drawable.bg_profile_section
+            if (isCurrent) R.drawable.bg_card_culture
+            else R.drawable.bg_card_menu
         )
 
         // Click to toggle expand

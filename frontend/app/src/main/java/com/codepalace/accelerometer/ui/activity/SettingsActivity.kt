@@ -1,5 +1,6 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
+import com.codepalace.accelerometer.R
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
@@ -10,6 +11,7 @@ import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import com.codepalace.accelerometer.ui.theme.RedModeController
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -54,7 +56,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<SwitchCompat>(R.id.switchRedMode).apply {
             isChecked = settingsStorage.redModeEnabled
             setOnCheckedChangeListener { _, checked ->
-                settingsStorage.redModeEnabled = checked
+                RedModeController.setEnabled(this@SettingsActivity, checked)
                 showAppMessage(
                     if (checked) "Red mode enabled." else "Red mode disabled.",
                     MessageKind.INFO

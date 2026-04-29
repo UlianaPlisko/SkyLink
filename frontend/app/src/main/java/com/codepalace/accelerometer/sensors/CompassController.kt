@@ -101,6 +101,7 @@ class CompassController(
         computeAdjustedOrientation(rotationMatrix)
     }
 
+    @Suppress("DEPRECATION")
     private fun computeAdjustedOrientation(baseMatrix: FloatArray) {
         val rotation = windowManager.defaultDisplay.rotation
 

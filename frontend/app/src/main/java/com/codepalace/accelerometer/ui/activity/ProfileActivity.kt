@@ -1,5 +1,6 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
+import com.codepalace.accelerometer.R
 import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
@@ -15,6 +16,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import coil.request.CachePolicy
 import coil.load
 import coil.transform.CircleCropTransformation
 import com.codepalace.accelerometer.api.ApiClient
@@ -22,11 +24,16 @@ import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.api.dto.UpdateProfileRequest
 import com.codepalace.accelerometer.api.dto.UserProfileResponse
 import com.codepalace.accelerometer.config.ApiConfig
+import com.codepalace.accelerometer.data.local.ProfileImageCache
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.IOException
@@ -39,6 +46,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var avatarInitial: TextView
     private lateinit var tvName: TextView
     private lateinit var tvRole: TextView
+    private lateinit var profileImageCache: ProfileImageCache
 
     private var currentProfile: UserProfileResponse? = null
 
@@ -59,6 +67,9 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_profile)
+        profileImageCache = ProfileImageCache(this)
+
+        applyTopBarInsets(findViewById(R.id.headerBar))
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -95,6 +106,7 @@ class ProfileActivity : AppCompatActivity() {
         tvName.text = name
         tvRole.text = session.getRole()?.toDisplayRole().orEmpty()
         avatarInitial.text = name.first().uppercaseChar().toString()
+        showCachedProfilePicture()
     }
 
     private fun loadProfile() {
@@ -102,14 +114,17 @@ class ProfileActivity : AppCompatActivity() {
             try {
                 val profile = ApiClient.profileApi.getProfile()
                 currentProfile = profile
+                saveProfileInSession(profile)
                 applyProfile(profile)
+                cacheRemoteProfilePicture(profile)
             } catch (e: HttpException) {
                 showAppMessage(
                     ApiErrorMapper.fromHttpException(e, "Could not load profile."),
                     MessageKind.ERROR
                 )
             } catch (e: IOException) {
-                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
+                showCachedProfilePicture()
+                showAppMessage("Offline mode: showing saved profile.", MessageKind.INFO)
             }
         }
     }
@@ -128,9 +143,11 @@ class ProfileActivity : AppCompatActivity() {
             avatarImage.load(absoluteUrl(profile.pfpUrl)) {
                 token?.let { addHeader("Authorization", "Bearer $it") }
                 transformations(CircleCropTransformation())
+                diskCachePolicy(CachePolicy.ENABLED)
+                memoryCachePolicy(CachePolicy.ENABLED)
                 listener(
                     onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
-                    onError = { _, _ -> avatarInitial.visibility = View.VISIBLE }
+                    onError = { _, _ -> showCachedProfilePicture() }
                 )
             }
         }
@@ -177,14 +194,7 @@ class ProfileActivity : AppCompatActivity() {
                 val profile = ApiClient.profileApi.updateProfile(UpdateProfileRequest(newName))
                 currentProfile = profile
 
-                val session = ApiClient.getSessionStorage()
-                session.saveAuth(
-                    token = session.getToken().orEmpty(),
-                    role = profile.role.name,
-                    displayName = profile.displayName,
-                    userId = profile.id,
-                    provider = profile.provider ?: session.getAuthProvider() ?: "LOCAL"
-                )
+                saveProfileInSession(profile)
 
                 applyProfile(profile)
                 showAppMessage("Profile name updated.", MessageKind.SUCCESS)
@@ -194,7 +204,10 @@ class ProfileActivity : AppCompatActivity() {
                     MessageKind.ERROR
                 )
             } catch (e: IOException) {
-                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
+                showAppMessage(
+                    "You are offline. Profile name can be changed when internet is back.",
+                    MessageKind.INFO
+                )
             }
         }
     }
@@ -222,6 +235,7 @@ class ProfileActivity : AppCompatActivity() {
                     throw HttpException(response)
                 }
 
+                savePickedProfilePicture(uri)
                 showAppMessage("Profile picture updated.", MessageKind.SUCCESS)
                 loadProfile()
             } catch (e: HttpException) {
@@ -230,7 +244,73 @@ class ProfileActivity : AppCompatActivity() {
                     MessageKind.ERROR
                 )
             } catch (e: IOException) {
-                showAppMessage(ApiErrorMapper.fromIOException(e), MessageKind.ERROR)
+                showAppMessage(
+                    "You are offline. Profile picture can be changed when internet is back.",
+                    MessageKind.INFO
+                )
+            }
+        }
+    }
+
+    private fun saveProfileInSession(profile: UserProfileResponse) {
+        val session = ApiClient.getSessionStorage()
+        session.updateUserProfile(
+            role = profile.role.name,
+            displayName = profile.displayName,
+            userId = profile.id,
+            provider = profile.provider ?: session.getAuthProvider() ?: "LOCAL"
+        )
+    }
+
+    private fun showCachedProfilePicture(): Boolean {
+        val userId = ApiClient.getSessionStorage().getUserId()
+        val cachedFile = profileImageCache.getProfilePicture(userId) ?: return false
+
+        avatarImage.load(cachedFile) {
+            transformations(CircleCropTransformation())
+            listener(
+                onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
+                onError = { _, _ -> avatarInitial.visibility = View.VISIBLE }
+            )
+        }
+
+        return true
+    }
+
+    private fun savePickedProfilePicture(uri: Uri) {
+        val userId = ApiClient.getSessionStorage().getUserId()
+        profileImageCache.saveProfilePicture(userId, uri)?.let { file ->
+            avatarImage.load(file) {
+                transformations(CircleCropTransformation())
+                listener(
+                    onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
+                    onError = { _, _ -> avatarInitial.visibility = View.VISIBLE }
+                )
+            }
+        }
+    }
+
+    private fun cacheRemoteProfilePicture(profile: UserProfileResponse) {
+        val pfpUrl = profile.pfpUrl?.takeIf { it.isNotBlank() } ?: return
+        val userId = profile.id
+        val token = ApiClient.getSessionStorage().getToken()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching {
+                val request = Request.Builder()
+                    .url(absoluteUrl(pfpUrl))
+                    .apply {
+                        token?.let { header("Authorization", "Bearer $it") }
+                    }
+                    .build()
+
+                OkHttpClient().newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        response.body?.bytes()?.takeIf { it.isNotEmpty() }?.let { bytes ->
+                            profileImageCache.saveProfilePicture(userId, bytes)
+                        }
+                    }
+                }
             }
         }
     }

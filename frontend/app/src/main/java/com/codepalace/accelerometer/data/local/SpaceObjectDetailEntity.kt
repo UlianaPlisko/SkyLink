@@ -20,6 +20,10 @@ data class SpaceObjectDetailEntity(
     val wikiSummary: String?,
     val wikiUrl: String?,
     val imageUrl: String?,
+    val orbitalModel: String?,
+    val lastComputed: String?,
+    val catalogId: String?,
+    val angularSize: Double?,
 
     val timestamp: Long = System.currentTimeMillis()
 )

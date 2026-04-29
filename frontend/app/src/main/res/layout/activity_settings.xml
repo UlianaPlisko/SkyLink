@@ -5,7 +5,7 @@
     android:id="@+id/settingsRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_blue">
+    android:background="@color/color_primary">
 
     <RelativeLayout
         android:id="@+id/headerBar"
@@ -30,14 +30,14 @@
             android:contentDescription="Back"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            app:tint="@color/accent_gold" />
+            app:tint="@color/color_accent" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="Settings"
-            android:textColor="@color/accent_gold"
+            android:textColor="@color/color_accent"
             android:textSize="28sp"
             android:textStyle="bold" />
     </RelativeLayout>
@@ -46,7 +46,7 @@
         android:id="@+id/headerDivider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@color/accent_gold"
+        android:background="@color/color_accent"
         app:layout_constraintTop_toBottomOf="@id/headerBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -135,7 +135,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:text="Manual/Auto"
-                android:textColor="@color/dark_blue"
+                android:textColor="@color/color_primary"
                 android:textSize="10sp" />
 
             <androidx.appcompat.widget.SwitchCompat

@@ -15,15 +15,15 @@ fun AppCompatActivity.showAppMessage(
     val snackbar = Snackbar.make(root, message, Snackbar.LENGTH_LONG)
 
     val background = when (kind) {
-        MessageKind.SUCCESS -> R.color.accent_gold
-        MessageKind.ERROR -> R.color.error_red
-        MessageKind.INFO -> R.color.blue
+        MessageKind.SUCCESS -> R.color.color_accent
+        MessageKind.ERROR -> R.color.color_error
+        MessageKind.INFO -> R.color.color_secondary
     }
 
     val text = when (kind) {
-        MessageKind.SUCCESS -> R.color.dark_blue
+        MessageKind.SUCCESS -> R.color.color_primary
         MessageKind.ERROR,
-        MessageKind.INFO -> R.color.text_primary_light
+        MessageKind.INFO -> R.color.color_text_on_background
     }
 
     snackbar.view.backgroundTintList = ColorStateList.valueOf(

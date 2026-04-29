@@ -1,4 +1,4 @@
-package com.codepalace.accelerometer.repository
+package com.codepalace.accelerometer.data.repository
 
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.dto.AuthResponse

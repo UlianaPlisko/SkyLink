@@ -1,6 +1,5 @@
 package com.codepalace.accelerometer.data.repository
 
-import android.content.Context
 import com.codepalace.accelerometer.api.CelestialApi
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.SpaceObjectDetailEntity
@@ -10,7 +9,6 @@ import com.codepalace.accelerometer.data.model.SpaceObjectSummary   // your Retr
 import com.codepalace.accelerometer.data.model.dto.ConstellationCultureResponse
 import com.codepalace.accelerometer.data.model.dto.WikiResponse
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 
 class CelestialRepository(
     private val api: CelestialApi,
@@ -89,7 +87,11 @@ class CelestialRepository(
         description = description,
         wikiSummary = wikiSummary,
         wikiUrl = wikiUrl,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        orbitalModel = orbitalModel,
+        lastComputed = lastComputed,
+        catalogId = catalogId,
+        angularSize = angularSize
     )
 
     private fun SpaceObjectDetailEntity.toDomain() = SpaceObjectDetail(
@@ -105,6 +107,10 @@ class CelestialRepository(
         description = description,
         wikiSummary = wikiSummary,
         wikiUrl = wikiUrl,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        orbitalModel = orbitalModel,
+        lastComputed = lastComputed,
+        catalogId = catalogId,
+        angularSize = angularSize
     )
 }

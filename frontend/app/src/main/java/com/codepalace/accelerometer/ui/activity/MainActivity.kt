@@ -1,5 +1,6 @@
-package com.codepalace.accelerometer
+package com.codepalace.accelerometer.ui.activity
 
+import com.codepalace.accelerometer.R
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -45,11 +46,11 @@ import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.sensors.CompassController
 import com.codepalace.accelerometer.ui.view.HalfCompassView
-import com.codepalace.accelerometer.ui.view.StarDetailActivity
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.util.SearchResultAdapter
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
 
     private lateinit var skyView: SkyView
