@@ -2,11 +2,13 @@ package com.codepalace.accelerometer.ui.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.codepalace.accelerometer.R
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -18,25 +20,22 @@ class HalfCompassView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(170, 255, 215, 120)
         style = Paint.Style.STROKE
         strokeWidth = 5f
     }
 
     private val tickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(220, 255, 235, 170)
         style = Paint.Style.STROKE
         strokeWidth = 3f
     }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(230, 255, 235, 170)
         textSize = 28f
         textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
     }
 
     private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(220, 255, 235, 170)
         style = Paint.Style.STROKE
         strokeWidth = 4f
     }
@@ -49,6 +48,7 @@ class HalfCompassView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        applyThemeColors()
 
         val w = width.toFloat()
         val h = height.toFloat()
@@ -102,5 +102,12 @@ class HalfCompassView @JvmOverloads constructor(
         var v = value % 360f
         if (v < 0f) v += 360f
         return v
+    }
+
+    private fun applyThemeColors() {
+        arcPaint.color = ContextCompat.getColor(context, R.color.color_compass_guide)
+        tickPaint.color = ContextCompat.getColor(context, R.color.color_compass_mark)
+        textPaint.color = ContextCompat.getColor(context, R.color.color_compass_text)
+        needlePaint.color = ContextCompat.getColor(context, R.color.color_compass_mark)
     }
 }

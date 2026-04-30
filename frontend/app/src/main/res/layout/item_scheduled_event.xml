@@ -1,174 +1,176 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="@android:color/white">
+    android:layout_marginBottom="18dp"
+    android:minHeight="142dp"
+    android:background="@drawable/bg_calendar_event_card"
+    android:paddingStart="14dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="10dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvEventName"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:text="Event Name"
+        android:textColor="@color/color_text_primary"
+        android:textSize="20sp"
+        android:fontFamily="serif"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnSave"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Event Name -->
-        <TextView
-            android:id="@+id/tvEventName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Event Name"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"
-            android:layout_marginBottom="8dp" />
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="66dp"
+        android:layout_height="28dp"
+        android:background="@drawable/bg_auth_button"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:text="Save"
+        android:textAllCaps="false"
+        android:textColor="@color/color_primary"
+        android:textSize="16sp"
+        android:fontFamily="serif"
+        app:backgroundTint="@null"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Description -->
-        <TextView
-            android:id="@+id/tvDescription"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginBottom="8dp" />
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Description"
+        android:textColor="@color/color_text_primary"
+        android:textSize="18sp"
+        android:fontFamily="serif"
+        android:alpha="0.75"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvEventName" />
 
-        <!-- Location -->
-        <TextView
-            android:id="@+id/tvLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Location"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginBottom="8dp" />
+    <TextView
+        android:id="@+id/tvLocation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Location"
+        android:textColor="@color/color_text_primary"
+        android:textSize="18sp"
+        android:fontFamily="serif"
+        android:alpha="0.75"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDescription" />
 
-        <!-- Time Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
+    <TextView
+        android:id="@+id/labelStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start at"
+        android:textColor="@color/color_text_primary"
+        android:textSize="17sp"
+        android:fontFamily="serif"
+        android:alpha="0.7"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvLocation" />
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+    <TextView
+        android:id="@+id/tvStartTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textColor="@color/color_text_primary"
+        android:textSize="16sp"
+        android:fontFamily="serif"
+        android:alpha="0.0"
+        app:layout_constraintStart_toStartOf="@id/labelStart"
+        app:layout_constraintTop_toBottomOf="@id/labelStart" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Start at"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    android:layout_marginBottom="2dp" />
+    <TextView
+        android:id="@+id/labelEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="112dp"
+        android:text="End at"
+        android:textColor="@color/color_text_primary"
+        android:textSize="17sp"
+        android:fontFamily="serif"
+        android:alpha="0.7"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/labelStart" />
 
-                <TextView
-                    android:id="@+id/tvStartTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="00:00"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/black" />
+    <TextView
+        android:id="@+id/tvEndTime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textColor="@color/color_text_primary"
+        android:textSize="16sp"
+        android:fontFamily="serif"
+        android:alpha="0.0"
+        app:layout_constraintStart_toStartOf="@id/labelEnd"
+        app:layout_constraintTop_toBottomOf="@id/labelEnd" />
 
-            </LinearLayout>
+    <TextView
+        android:id="@+id/labelCapacity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Capacity"
+        android:textColor="@color/color_text_primary"
+        android:textSize="17sp"
+        android:fontFamily="serif"
+        android:alpha="0.7"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+    <TextView
+        android:id="@+id/tvCapacity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Capacity"
+        android:textColor="@color/color_text_primary"
+        android:textSize="16sp"
+        android:fontFamily="serif"
+        android:alpha="0.0"
+        app:layout_constraintStart_toEndOf="@id/labelCapacity"
+        app:layout_constraintTop_toTopOf="@id/labelCapacity" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="End at"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    android:layout_marginBottom="2dp" />
+    <ImageButton
+        android:id="@+id/btnDelete"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Delete"
+        android:padding="8dp"
+        android:src="@drawable/ic_close"
+        android:visibility="gone"
+        app:tint="@color/color_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnSave" />
 
-                <TextView
-                    android:id="@+id/tvEndTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="00:00"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/black" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- Capacity and Buttons Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Capacity"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    android:layout_marginBottom="2dp" />
-
-                <TextView
-                    android:id="@+id/tvCapacity"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Capacity"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/black" />
-
-            </LinearLayout>
-
-            <!-- Save Button -->
-            <Button
-                android:id="@+id/btnSave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Save"
-                android:textSize="12sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                style="@style/Widget.AppCompat.Button.Colored" />
-
-            <!-- Delete Button -->
-            <ImageButton
-                android:id="@+id/btnDelete"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@drawable/ic_close"
-                android:contentDescription="Delete"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="centerInside" />
-
-        </LinearLayout>
-
-        <!-- Enroll Button (Full Width) -->
-        <Button
-            android:id="@+id/btnEnroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Enroll"
-            android:textSize="14sp"
-            android:layout_marginTop="12dp"
-            style="@style/Widget.AppCompat.Button.Colored" />
-
-    </LinearLayout>
-
-</androidx.cardview.widget.CardView>
+    <Button
+        android:id="@+id/btnEnroll"
+        android:layout_width="96dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_auth_button"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:text="Enroll"
+        android:textAllCaps="false"
+        android:textColor="@color/color_primary"
+        android:textSize="18sp"
+        android:fontFamily="serif"
+        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

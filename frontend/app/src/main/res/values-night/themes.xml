@@ -1,7 +1,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Frontend" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="android:fontFamily">serif</item>
+        <item name="fontFamily">serif</item>
+        <item name="android:textViewStyle">@style/AppSerifTextView</item>
+        <item name="android:buttonStyle">@style/AppSerifButton</item>
+        <item name="android:editTextStyle">@style/AppSerifEditText</item>
+        <item name="android:windowAnimationStyle">@style/AppActivityAnimation</item>
+        <item name="android:colorAccent">@color/color_accent</item>
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorSecondary">@color/color_accent</item>
     </style>
 </resources>

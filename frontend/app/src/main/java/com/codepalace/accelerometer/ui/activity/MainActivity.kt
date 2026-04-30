@@ -13,6 +13,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
@@ -203,13 +204,42 @@ class MainActivity : AppCompatActivity() {
         }
 
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
+        loadingOverlay.bringToFront()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         settingsStorage = AppSettingsStorage(this)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(0, 0, 0, 0)
+
+            findViewById<View>(R.id.topBar).updateMargins(
+                left = systemBars.left + 12.dp(),
+                top = systemBars.top + 10.dp(),
+                right = systemBars.right + 12.dp()
+            )
+            btnChat.updateMargins(
+                left = systemBars.left + 16.dp(),
+                bottom = systemBars.bottom + 20.dp()
+            )
+            btnCalendar.updateMargins(
+                right = systemBars.right + 16.dp(),
+                bottom = systemBars.bottom + 20.dp()
+            )
+            findViewById<View>(R.id.compassContainer).updateMargins(
+                bottom = systemBars.bottom
+            )
+            starPreviewPanel.updateMargins(
+                left = systemBars.left + 12.dp(),
+                right = systemBars.right + 12.dp(),
+                bottom = systemBars.bottom + 90.dp()
+            )
+            findViewById<View>(R.id.searchBarRow).updateMargins(
+                left = systemBars.left + 12.dp(),
+                top = systemBars.top + 10.dp(),
+                right = systemBars.right + 12.dp()
+            )
+
             insets
         }
 
@@ -293,7 +323,7 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.stars.collect         { stars   -> skyView.stars          = stars  } }
                 launch { viewModel.fovHorizontal.collect { fov     -> skyView.fovHorizontal  = fov    } }
-                launch { viewModel.isLoading.collect     { loading -> loadingOverlay.isVisible = loading } }
+                launch { viewModel.isLoading.collect     { loading -> setLoadingVisible(loadingOverlay, loading) } }
 
                 // Search overlay visibility + keyboard
                 launch {
@@ -452,5 +482,44 @@ class MainActivity : AppCompatActivity() {
         }
 
         lastSensorsEnabled = sensorsEnabled
+    }
+
+    private fun setLoadingVisible(loadingOverlay: View, visible: Boolean) {
+        loadingOverlay.animate().cancel()
+
+        if (visible) {
+            loadingOverlay.alpha = 0f
+            loadingOverlay.isVisible = true
+            loadingOverlay.animate()
+                .alpha(1f)
+                .setDuration(220L)
+                .start()
+        } else {
+            loadingOverlay.animate()
+                .alpha(0f)
+                .setDuration(180L)
+                .withEndAction {
+                    loadingOverlay.isVisible = false
+                }
+                .start()
+        }
+    }
+
+    private fun View.updateMargins(
+        left: Int? = null,
+        top: Int? = null,
+        right: Int? = null,
+        bottom: Int? = null
+    ) {
+        val params = layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        left?.let { params.leftMargin = it }
+        top?.let { params.topMargin = it }
+        right?.let { params.rightMargin = it }
+        bottom?.let { params.bottomMargin = it }
+        layoutParams = params
+    }
+
+    private fun Int.dp(): Int {
+        return (this * resources.displayMetrics.density).toInt()
     }
 }

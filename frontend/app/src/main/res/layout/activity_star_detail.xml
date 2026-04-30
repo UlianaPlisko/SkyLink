@@ -70,6 +70,15 @@
                 android:visibility="gone"
                 android:indeterminateTint="@color/color_secondary" />
 
+            <ImageView
+                android:id="@+id/ivImageLoadingLogo"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/app_name"
+                android:src="@mipmap/ic_launcher"
+                android:visibility="gone" />
+
         </FrameLayout>
 
         <LinearLayout

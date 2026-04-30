@@ -28,6 +28,8 @@ class AuthActivity : AppCompatActivity() {
         ApiClient.init(this)
         setContentView(R.layout.activity_auth)
 
+        applyTopBarInsets(findViewById(R.id.headerBar), extraTopDp = 0)
+
         btnBack = findViewById(R.id.btnBack)
 
         btnBack.setOnClickListener {

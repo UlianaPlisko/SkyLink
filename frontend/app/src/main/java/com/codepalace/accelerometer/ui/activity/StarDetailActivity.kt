@@ -48,6 +48,7 @@ class StarDetailActivity : AppCompatActivity() {
     private lateinit var tvAlsoKnown: TextView
 
     private lateinit var pbImageLoading: ProgressBar
+    private lateinit var ivImageLoadingLogo: ImageView
     private var starId: Long = -1L
     private var isFavorite = false
     private var favoriteBusy = false
@@ -82,6 +83,7 @@ class StarDetailActivity : AppCompatActivity() {
         tvDescription = findViewById(R.id.tvDescription)
         tvAlsoKnown = findViewById(R.id.tvAlsoKnown)
         pbImageLoading = findViewById(R.id.pbImageLoading)
+        ivImageLoadingLogo = findViewById(R.id.ivImageLoadingLogo)
 
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
@@ -172,7 +174,7 @@ class StarDetailActivity : AppCompatActivity() {
                         if (error != null) {
                             tvSubtitle.text = error
                             tvDescription.text = "Could not load data from backend."
-                            pbImageLoading.visibility = View.GONE
+                            setImageLoadingVisible(false)
                             ivStarImage.setImageResource(R.drawable.space_object_placeholder)
                         }
                     }
@@ -202,13 +204,13 @@ class StarDetailActivity : AppCompatActivity() {
 
     private fun showSpaceObjectImage(spaceObjectId: Long, rawImageUrl: String?) {
         spaceObjectImageCache.getImage(spaceObjectId)?.let { cachedImage ->
-            pbImageLoading.visibility = View.GONE
+            setImageLoadingVisible(false)
             ivStarImage.load(cachedImage) {
                 crossfade(true)
                 listener(
-                    onSuccess = { _, _ -> pbImageLoading.visibility = View.GONE },
+                    onSuccess = { _, _ -> setImageLoadingVisible(false) },
                     onError = { _, _ ->
-                        pbImageLoading.visibility = View.GONE
+                        setImageLoadingVisible(false)
                         ivStarImage.setImageResource(R.drawable.space_object_placeholder)
                     }
                 )
@@ -218,12 +220,12 @@ class StarDetailActivity : AppCompatActivity() {
 
         val imageUrl = resolveUrl(rawImageUrl)
         if (imageUrl.isNullOrBlank()) {
-            pbImageLoading.visibility = View.GONE
+            setImageLoadingVisible(false)
             ivStarImage.setImageResource(R.drawable.space_object_placeholder)
             return
         }
 
-        pbImageLoading.visibility = View.VISIBLE
+        setImageLoadingVisible(true)
         ivStarImage.setImageDrawable(null)
 
         ivStarImage.load(imageUrl) {
@@ -233,13 +235,13 @@ class StarDetailActivity : AppCompatActivity() {
 
             listener(
                 onStart = {
-                    pbImageLoading.visibility = View.VISIBLE
+                    setImageLoadingVisible(true)
                 },
                 onSuccess = { _, _ ->
-                    pbImageLoading.visibility = View.GONE
+                    setImageLoadingVisible(false)
                 },
                 onError = { _, _ ->
-                    pbImageLoading.visibility = View.GONE
+                    setImageLoadingVisible(false)
                     ivStarImage.setImageResource(R.drawable.space_object_placeholder)
                 }
             )
@@ -248,6 +250,12 @@ class StarDetailActivity : AppCompatActivity() {
         lifecycleScope.launch {
             spaceObjectImageCache.downloadAndSave(spaceObjectId, imageUrl)
         }
+    }
+
+    private fun setImageLoadingVisible(visible: Boolean) {
+        val visibility = if (visible) View.VISIBLE else View.GONE
+        pbImageLoading.visibility = visibility
+        ivImageLoadingLogo.visibility = visibility
     }
 
     private fun loadFavoriteState() {

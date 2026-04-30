@@ -28,6 +28,7 @@ class SignupActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
         setContentView(R.layout.activity_signup)
+        applyTopBarInsets(findViewById(R.id.headerBar), extraTopDp = 0)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
         val etSignupUsername = findViewById<EditText>(R.id.etSignupUsername)

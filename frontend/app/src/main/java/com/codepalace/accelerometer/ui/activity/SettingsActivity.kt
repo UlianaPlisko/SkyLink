@@ -23,6 +23,8 @@ class SettingsActivity : AppCompatActivity() {
         settingsStorage = AppSettingsStorage(this)
         setContentView(R.layout.activity_settings)
 
+        applyTopBarInsets(findViewById(R.id.headerBar), extraTopDp = 0)
+
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
         findViewById<LinearLayout>(R.id.itemAccount).setOnClickListener {

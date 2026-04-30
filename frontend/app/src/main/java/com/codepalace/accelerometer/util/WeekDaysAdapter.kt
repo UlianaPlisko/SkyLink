@@ -1,7 +1,6 @@
 package com.codepalace.accelerometer.util
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
@@ -62,13 +61,13 @@ class WeekDaysAdapter(
             tvDayNumber.text = weekDay.dayNumber
 
             if (isSelected) {
-                container.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.color_accent))
-                tvDayName.setTextColor(Color.WHITE)
-                tvDayNumber.setTextColor(Color.WHITE)
+                container.setBackgroundResource(R.drawable.bg_week_day_selected)
+                tvDayName.setTextColor(ContextCompat.getColor(itemView.context, R.color.color_primary))
+                tvDayNumber.setTextColor(ContextCompat.getColor(itemView.context, R.color.color_primary))
             } else {
-                container.setBackgroundColor(Color.TRANSPARENT)
-                tvDayName.setTextColor(ContextCompat.getColor(itemView.context, android.R.color.darker_gray))
-                tvDayNumber.setTextColor(ContextCompat.getColor(itemView.context, android.R.color.black))
+                container.setBackgroundResource(R.drawable.bg_week_day_unselected)
+                tvDayName.setTextColor(ContextCompat.getColor(itemView.context, R.color.color_text_primary))
+                tvDayNumber.setTextColor(ContextCompat.getColor(itemView.context, R.color.color_text_primary))
             }
 
             itemView.setOnClickListener {

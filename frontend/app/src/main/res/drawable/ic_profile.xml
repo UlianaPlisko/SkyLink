@@ -7,10 +7,10 @@
       android:pathData="M12.636,1C15.649,1 18.089,3.438 18.089,6.439C18.089,9.441 15.649,11.878 12.636,11.878C9.623,11.878 7.184,9.441 7.184,6.439C7.184,3.438 9.623,1 12.636,1Z"
       android:strokeWidth="2"
       android:fillColor="#00000000"
-      android:strokeColor="#22234C"/>
+      android:strokeColor="@color/color_primary"/>
   <path
       android:pathData="M2.078,24C-1.288,21.82 3.5,14.896 12.636,14.634C21.772,14.373 27.45,22.127 23.195,24H2.078Z"
       android:strokeWidth="2"
       android:fillColor="#00000000"
-      android:strokeColor="#22234C"/>
+      android:strokeColor="@color/color_primary" />
 </vector>

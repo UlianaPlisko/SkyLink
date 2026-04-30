@@ -10,25 +10,23 @@
     <RelativeLayout
         android:id="@+id/headerBar"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="0dp"
         android:paddingStart="10dp"
-        android:paddingTop="8dp"
         android:paddingEnd="10dp"
-        android:paddingBottom="8dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:background="@android:color/transparent"
             android:contentDescription="Back"
-            android:padding="4dp"
+            android:padding="12dp"
             android:src="@drawable/ic_back"
             app:tint="@color/color_accent" />
 
@@ -38,8 +36,8 @@
             android:layout_centerInParent="true"
             android:text="Settings"
             android:textColor="@color/color_accent"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:textSize="24sp"
+            android:fontFamily="serif" />
     </RelativeLayout>
 
     <View
@@ -55,9 +53,9 @@
         android:id="@+id/settingsList"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
+        android:paddingHorizontal="6dp"
         app:layout_constraintTop_toBottomOf="@id/headerDivider"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -70,7 +68,8 @@
             <ImageView
                 style="@style/SettingsRowIcon"
                 android:contentDescription="Account"
-                android:src="@drawable/ic_profile" />
+                android:src="@drawable/ic_profile"
+                app:tint="@color/color_primary" />
 
             <TextView
                 style="@style/SettingsRowTitle"
@@ -79,7 +78,8 @@
             <ImageView
                 style="@style/SettingsChevron"
                 android:contentDescription="Open account settings"
-                android:src="@drawable/ic_arrow_right" />
+                android:src="@drawable/ic_arrow_right"
+                app:tint="@color/color_primary" />
         </LinearLayout>
 
         <LinearLayout
@@ -88,7 +88,8 @@
             <ImageView
                 style="@style/SettingsRowIcon"
                 android:contentDescription="Notification"
-                android:src="@drawable/ic_notification" />
+                android:src="@drawable/ic_notification"
+                app:tint="@color/color_primary" />
 
             <TextView
                 style="@style/SettingsRowTitle"
@@ -97,7 +98,11 @@
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchNotifications"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:minWidth="48dp"
+                app:showText="false"
+                app:thumbTint="@color/switch_thumb_tint"
+                app:trackTint="@color/switch_track_tint" />
         </LinearLayout>
 
         <LinearLayout
@@ -106,7 +111,8 @@
             <ImageView
                 style="@style/SettingsRowIcon"
                 android:contentDescription="Red mode"
-                android:src="@drawable/ic_moon" />
+                android:src="@drawable/ic_moon"
+                app:tint="@color/color_primary" />
 
             <TextView
                 style="@style/SettingsRowTitle"
@@ -115,7 +121,11 @@
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchRedMode"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:minWidth="48dp"
+                app:showText="false"
+                app:thumbTint="@color/switch_thumb_tint"
+                app:trackTint="@color/switch_track_tint" />
         </LinearLayout>
 
         <LinearLayout
@@ -124,7 +134,8 @@
             <ImageView
                 style="@style/SettingsRowIcon"
                 android:contentDescription="Sensors"
-                android:src="@drawable/ic_sensor" />
+                android:src="@drawable/ic_sensor"
+                app:tint="@color/color_primary" />
 
             <TextView
                 style="@style/SettingsRowTitle"
@@ -136,12 +147,17 @@
                 android:layout_marginEnd="6dp"
                 android:text="Manual/Auto"
                 android:textColor="@color/color_primary"
-                android:textSize="10sp" />
+                android:textSize="12sp"
+                android:fontFamily="serif" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchSensors"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:minWidth="48dp"
+                app:showText="false"
+                app:thumbTint="@color/switch_thumb_tint"
+                app:trackTint="@color/switch_track_tint" />
         </LinearLayout>
 
         <LinearLayout
@@ -151,7 +167,8 @@
             <ImageView
                 style="@style/SettingsRowIcon"
                 android:contentDescription="Location"
-                android:src="@drawable/ic_location" />
+                android:src="@drawable/ic_location"
+                app:tint="@color/color_primary" />
 
             <TextView
                 style="@style/SettingsRowTitle"
@@ -160,7 +177,8 @@
             <ImageView
                 style="@style/SettingsChevron"
                 android:contentDescription="Open location settings"
-                android:src="@drawable/ic_arrow_right" />
+                android:src="@drawable/ic_arrow_right"
+                app:tint="@color/color_primary" />
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -16,6 +16,13 @@
 
     <!-- Sky -->
     <color name="color_sky_background">#0E1A2B</color>
+    <color name="color_sky_star">#FFFFFFFF</color>
+    <color name="color_sky_bright_star">#FFFFEBAA</color>
+    <color name="color_sky_label">#DCD2D2D2</color>
+    <color name="color_sky_guide">#46FFFFFF</color>
+    <color name="color_compass_guide">#AAFFD778</color>
+    <color name="color_compass_mark">#DCFFEBAA</color>
+    <color name="color_compass_text">#E6FFEBAA</color>
 
     <!-- Overlays -->
     <color name="overlay_light">#99FFFFFF</color>

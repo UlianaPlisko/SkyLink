@@ -2,9 +2,9 @@ package com.codepalace.accelerometer.ui.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -25,18 +25,16 @@ class SkyView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(220, 210, 210, 210)
         textSize = 30f
         textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
     }
 
     private val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
         style = Paint.Style.FILL
     }
 
     private val debugPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(70, 255, 255, 255)
         strokeWidth = 2f
     }
 
@@ -119,6 +117,7 @@ class SkyView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        applyThemeColors()
         canvas.drawColor(ContextCompat.getColor(context, R.color.color_sky_background))
 
         if (width <= 0 || height <= 0) return
@@ -221,11 +220,10 @@ class SkyView @JvmOverloads constructor(
                 screenY + radius + 8f
             )
 
-            starPaint.color = if (star.magnitude < 1f) {
-                Color.rgb(255, 235, 170)
-            } else {
-                Color.WHITE
-            }
+            starPaint.color = ContextCompat.getColor(
+                context,
+                if (star.magnitude < 1f) R.color.color_sky_bright_star else R.color.color_sky_star
+            )
 
             canvas.drawCircle(screenX, screenY, radius, starPaint)
         }
@@ -464,12 +462,18 @@ class SkyView @JvmOverloads constructor(
     }
 
     private fun drawCenteredDebug(canvas: Canvas, message: String) {
-        textPaint.color = Color.argb(180, 200, 200, 200)
+        val originalColor = textPaint.color
+        textPaint.color = ContextCompat.getColor(context, R.color.color_sky_label)
         textPaint.textAlign = Paint.Align.CENTER
         textPaint.textSize = 34f
         canvas.drawText(message, width / 2f, height / 2f, textPaint)
         textPaint.textSize = 30f
-        textPaint.color = Color.argb(220, 210, 210, 210)
+        textPaint.color = originalColor
+    }
+
+    private fun applyThemeColors() {
+        textPaint.color = ContextCompat.getColor(context, R.color.color_sky_label)
+        debugPaint.color = ContextCompat.getColor(context, R.color.color_sky_guide)
     }
 
     private fun manualRotationMatrix(): FloatArray {

@@ -2,10 +2,13 @@ package com.codepalace.accelerometer.ui.activity
 
 import com.codepalace.accelerometer.R
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -137,14 +140,39 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showStatus(message: String) {
         container.removeAllViews()
         container.addView(
-            TextView(this).apply {
-                text = message
-                setTextColor(getColor(R.color.color_accent))
-                textSize = 18f
-                gravity = android.view.Gravity.CENTER
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+                if (message.startsWith("Loading", ignoreCase = true)) {
+                    addView(
+                        ImageView(this@FavoritesActivity).apply {
+                            setImageResource(R.mipmap.ic_launcher)
+                            contentDescription = getString(R.string.app_name)
+                            val size = 76.dp()
+                            layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                                bottomMargin = 18.dp()
+                            }
+                        }
+                    )
+                }
+
+                addView(
+                    TextView(this@FavoritesActivity).apply {
+                        text = message
+                        setTextColor(getColor(R.color.color_accent))
+                        textSize = 18f
+                        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
+                        gravity = Gravity.CENTER
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                    }
                 )
             }
         )
@@ -187,12 +215,14 @@ class FavoritesActivity : AppCompatActivity() {
             text = spaceObject.displayName
             setTextColor(getColor(R.color.color_primary))
             textSize = 18f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
         }
 
         val objectTypeText = TextView(this).apply {
             text = spaceObject.objectType
             setTextColor(getColor(R.color.color_primary))
             textSize = 14f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.85f
         }
 
@@ -200,6 +230,7 @@ class FavoritesActivity : AppCompatActivity() {
             text = "Magnitude: ${spaceObject.magnitude}"
             setTextColor(getColor(R.color.color_primary))
             textSize = 14f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.75f
         }
 
@@ -207,6 +238,7 @@ class FavoritesActivity : AppCompatActivity() {
             text = "RA: ${spaceObject.raDeg}, Dec: ${spaceObject.decDeg}"
             setTextColor(getColor(R.color.color_primary))
             textSize = 13f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.7f
         }
 
@@ -214,6 +246,7 @@ class FavoritesActivity : AppCompatActivity() {
             text = "Visibility: ${favorite.visibility}"
             setTextColor(getColor(R.color.color_primary))
             textSize = 13f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.7f
         }
 
@@ -225,6 +258,7 @@ class FavoritesActivity : AppCompatActivity() {
 
             setTextColor(getColor(R.color.color_primary))
             textSize = 13f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.7f
         }
 
@@ -232,6 +266,7 @@ class FavoritesActivity : AppCompatActivity() {
             text = favorite.addedAt?.let { "Added: $it" } ?: ""
             setTextColor(getColor(R.color.color_primary))
             textSize = 12f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
             alpha = 0.6f
 
             visibility = if (favorite.addedAt.isNullOrBlank()) {
@@ -250,5 +285,9 @@ class FavoritesActivity : AppCompatActivity() {
         card.addView(addedAtText)
 
         return card
+    }
+
+    private fun Int.dp(): Int {
+        return (this * resources.displayMetrics.density).toInt()
     }
 }

@@ -29,6 +29,7 @@ class CalendarActivity : AppCompatActivity() {
     private lateinit var btnPrevWeek: ImageButton
     private lateinit var btnNextWeek: ImageButton
     private lateinit var rvWeekDays: RecyclerView
+    private lateinit var tvScheduledTitle: TextView
     private lateinit var rvScheduledEvents: RecyclerView
 
     private lateinit var weekDaysAdapter: WeekDaysAdapter
@@ -46,6 +47,7 @@ class CalendarActivity : AppCompatActivity() {
         btnPrevWeek = findViewById(R.id.btnPrevWeek)
         btnNextWeek = findViewById(R.id.btnNextWeek)
         rvWeekDays = findViewById(R.id.rvWeekDays)
+        tvScheduledTitle = findViewById(R.id.tvScheduledTitle)
         rvScheduledEvents = findViewById(R.id.rvScheduledEvents)
 
         // Setup adapters
@@ -100,6 +102,7 @@ class CalendarActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.selectedDate.collect { selectedDate ->
                 weekDaysAdapter.setSelectedDate(selectedDate)
+                tvScheduledTitle.text = "Scheduled for ${formatMonthDay(selectedDate)}"
             }
         }
 
@@ -112,6 +115,11 @@ class CalendarActivity : AppCompatActivity() {
 
     private fun formatDisplayDate(date: java.time.LocalDate): String {
         val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM dd, yyyy")
+        return date.format(formatter)
+    }
+
+    private fun formatMonthDay(date: java.time.LocalDate): String {
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM d")
         return date.format(formatter)
     }
 }
