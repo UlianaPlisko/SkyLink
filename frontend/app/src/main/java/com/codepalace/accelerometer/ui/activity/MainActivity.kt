@@ -43,6 +43,7 @@ import android.widget.TextView
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.sensors.CompassController
@@ -200,7 +201,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnCalendar.setOnClickListener {
-            startActivity(Intent(this, CalendarActivity::class.java))
+            if (!ApiClient.getSessionStorage().isLoggedIn()) {
+                showAppMessage("Log in to view calendar.", MessageKind.INFO)
+                startActivity(Intent(this, AuthActivity::class.java))
+            } else {
+                startActivity(Intent(this, CalendarActivity::class.java))
+            }
         }
 
         val loadingOverlay = findViewById<View>(R.id.loadingOverlay)

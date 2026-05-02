@@ -7,5 +7,6 @@ data class ScheduledEvent(
     val location: String,
     val startTime: String,
     val endTime: String,
-    val capacity: String
+    val capacity: String,
+    val isEnrolled: Boolean
 )

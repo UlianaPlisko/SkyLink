@@ -1,5 +1,6 @@
 package com.codepalace.accelerometer.data.repository
 
+import android.util.Log
 import com.codepalace.accelerometer.api.CelestialApi
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.SpaceObjectDetailEntity
@@ -25,13 +26,29 @@ class CelestialRepository(
     // Try network, fallback to cache, then save new data
     suspend fun refreshAllObjects(): Boolean {
         return try {
+            Log.d("CelestialRepository", "🌐 Fetching space objects from API...")
+
             val remoteList = api.getAllSpaceObjects()
+            Log.d("CelestialRepository", "✅ API returned ${remoteList.size} objects")
+
             val entities = remoteList.map { it.toEntity() }
+            Log.d("CelestialRepository", "🧩 Mapped to ${entities.size} entities")
+
             dao.deleteAll()
+            Log.d("CelestialRepository", "🗑️ Old DB data cleared")
+
             dao.insertAll(entities)
+            Log.d("CelestialRepository", "💾 New data inserted into DB")
+
             true
         } catch (e: Exception) {
-            // no internet or server down → keep cache
+            Log.e("CelestialRepository", "❌ refreshAllObjects FAILED", e)
+
+            // extra detail if it's HTTP
+            if (e is retrofit2.HttpException) {
+                Log.e("CelestialRepository", "🌍 HTTP ERROR ${e.code()} - ${e.message()}")
+            }
+
             false
         }
     }

@@ -1,9 +1,8 @@
-package com.skylink.backend.dto.event
+package com.codepalace.accelerometer.data.model.dto
 
-import com.skylink.backend.dto.celestial.SpaceObjectSummary
 import java.time.Instant
 
-data class EventDetailsResponse(
+data class EventResponse(
     val id: Long,
     val title: String,
     val description: String?,
@@ -12,5 +11,5 @@ data class EventDetailsResponse(
     val endAt: Instant?,
     val creatorId: Long,
     val participantsCount: Int,
-    val isParticipant: Boolean
+    val participant: Boolean
 )

@@ -1,14 +1,21 @@
 package com.codepalace.accelerometer.api
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.codepalace.accelerometer.config.ApiConfig
 import com.codepalace.accelerometer.data.local.SessionStorage
+import com.codepalace.accelerometer.util.InstantTypeAdapter
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
+@RequiresApi(Build.VERSION_CODES.O)
 object ApiClient {
     private const val BASE_URL = ApiConfig.BASE_URL
 
@@ -39,11 +46,17 @@ object ApiClient {
             .build()
     }
 
+    private val gson: Gson by lazy {
+        GsonBuilder()
+            .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
+            .create()
+    }
+
     private val publicRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(publicOkHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))  // ← use custom gson
             .build()
     }
 
@@ -51,7 +64,7 @@ object ApiClient {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(authOkHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))  // ← use custom gson
             .build()
     }
 
@@ -69,6 +82,10 @@ object ApiClient {
 
     val favoriteApi: FavoriteApi by lazy {
         authRetrofit.create(FavoriteApi::class.java)
+    }
+
+    val eventApi: EventApi by lazy {
+        authRetrofit.create(EventApi::class.java)
     }
 
     fun getSessionStorage(): SessionStorage = sessionStorage

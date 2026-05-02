@@ -12,9 +12,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SpaceObjectEntity::class,
         SpaceObjectDetailEntity::class,
         FavoriteEntity::class,
-        PendingFavoriteActionEntity::class
+        PendingFavoriteActionEntity::class,
+        EventEntity::class
     ],
-    version = 7,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -26,6 +27,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
 
     abstract fun pendingFavoriteActionDao(): PendingFavoriteActionDao
+
+    abstract fun eventDao(): EventDao
 
     companion object {
         @Volatile
@@ -77,15 +80,50 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                eventType TEXT NOT NULL,
+                startAt TEXT NOT NULL,
+                endAt TEXT,
+                creatorId INTEGER NOT NULL,
+                participantsCount INTEGER NOT NULL
+            )
+            """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+            ALTER TABLE events ADD COLUMN isParticipant INTEGER NOT NULL DEFAULT 0
+            """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                                context.applicationContext,
-                                AppDatabase::class.java,
-                                "celestial_database"
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "celestial_database"
                 )
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
-                    .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2, 3)
+                    .addMigrations(
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
+                    )
+                    .fallbackToDestructiveMigration(false)
                     .build()
 
                 INSTANCE = instance

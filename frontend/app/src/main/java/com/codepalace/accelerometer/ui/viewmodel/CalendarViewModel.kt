@@ -1,101 +1,116 @@
 package com.codepalace.accelerometer.ui.viewmodel
 
+import android.app.Application
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.codepalace.accelerometer.api.ApiClient
+import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.model.calendar.ScheduledEvent
 import com.codepalace.accelerometer.data.model.calendar.WeekDay
+import com.codepalace.accelerometer.data.repository.CelestialRepository
+import com.codepalace.accelerometer.data.repository.EventRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
 @RequiresApi(Build.VERSION_CODES.O)
-class CalendarViewModel : ViewModel() {
+class CalendarViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Current date being viewed
+    private val repository = EventRepository(
+        api = ApiClient.eventApi,
+        database = AppDatabase.getDatabase(application)
+    )
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     private val _currentDate = MutableStateFlow(LocalDate.now())
     val currentDate: StateFlow<LocalDate> = _currentDate
 
-    // Selected date (highlighted)
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    // Week days (Mon-Sun) for the current week
     private val _weekDays = MutableStateFlow<List<WeekDay>>(emptyList())
     val weekDays: StateFlow<List<WeekDay>> = _weekDays
 
-    // Scheduled events for the selected date
     private val _scheduledEvents = MutableStateFlow<List<ScheduledEvent>>(emptyList())
     val scheduledEvents: StateFlow<List<ScheduledEvent>> = _scheduledEvents
 
     init {
-        // Initialize with today's date and this week's days
         updateWeekDays()
-        updateScheduledEvents()
+        loadEvents()
     }
 
-    /**
-     * Select a specific date and update the scheduled events for that date
-     */
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
-        updateScheduledEvents()
+        updateWeekDays()
+        loadEvents()
     }
 
-    /**
-     * Navigate to the previous week
-     */
     fun previousWeek() {
-        val newDate = _currentDate.value.minusWeeks(1)
-        _currentDate.value = newDate
+        _currentDate.value = _currentDate.value.minusWeeks(1)
         updateWeekDays()
     }
 
-    /**
-     * Navigate to the next week
-     */
     fun nextWeek() {
-        val newDate = _currentDate.value.plusWeeks(1)
-        _currentDate.value = newDate
+        _currentDate.value = _currentDate.value.plusWeeks(1)
         updateWeekDays()
     }
 
-    /**
-     * Update the week days for the current week
-     * Week starts on Monday
-     */
     private fun updateWeekDays() {
-        val mondayOfWeek = _currentDate.value.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        val monday = _currentDate.value.with(
+            TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)
+        )
 
-        val weekDays = mutableListOf<WeekDay>()
-        for (i in 0..6) {
-            val date = mondayOfWeek.plusDays(i.toLong())
-            val dayOfWeek = date.dayOfWeek.getDisplayName(
-                java.time.format.TextStyle.SHORT,
-                java.util.Locale.getDefault()
-            )
+        _weekDays.value = (0..6).map {
+            val date = monday.plusDays(it.toLong())
 
-            weekDays.add(
-                WeekDay(
-                    date = date,
-                    dayName = dayOfWeek,
-                    dayNumber = date.dayOfMonth.toString(),
-                    isSelected = date == _selectedDate.value
-                )
+            WeekDay(
+                date = date,
+                dayName = date.dayOfWeek.getDisplayName(
+                    java.time.format.TextStyle.SHORT,
+                    java.util.Locale.getDefault()
+                ),
+                dayNumber = date.dayOfMonth.toString(),
+                isSelected = date == _selectedDate.value
             )
         }
-
-        _weekDays.value = weekDays
     }
 
-    /**
-     * Update scheduled events for the selected date
-     * (Placeholder - will be replaced with actual API calls)
-     */
-    private fun updateScheduledEvents() {
-        // For now, return empty list
-        // Later, this will fetch events from your backend
-        _scheduledEvents.value = emptyList()
+    private fun loadEvents() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val dateStr = _selectedDate.value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                Log.d("CalendarViewModel", "Loading events for date: $dateStr")
+
+                val events = repository.refreshEventsByDate(dateStr)
+                Log.d("CalendarViewModel", "Loaded ${events.size} events")
+
+                _scheduledEvents.value = events
+            } catch (e: Exception) {
+                Log.e("CalendarViewModel", "Failed to load events", e)
+                _scheduledEvents.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    suspend fun enroll(eventId: Long) {
+        repository.enroll(eventId)
+        loadEvents()
+    }
+
+    suspend fun signOut(eventId: Long) {
+        repository.signOut(eventId)
+        loadEvents()
     }
 }

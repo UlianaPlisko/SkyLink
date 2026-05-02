@@ -3,6 +3,7 @@ package com.codepalace.accelerometer.ui.activity
 import com.codepalace.accelerometer.R
 import android.app.AlertDialog
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -10,6 +11,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.api.ApiClient
@@ -26,6 +28,7 @@ class AccountSettingsActivity : AppCompatActivity() {
     private lateinit var tvEmail: TextView
     private lateinit var itemChangePassword: LinearLayout
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
@@ -54,6 +57,7 @@ class AccountSettingsActivity : AppCompatActivity() {
         loadAccount()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun loadAccount() {
         lifecycleScope.launch {
             try {
@@ -83,6 +87,7 @@ class AccountSettingsActivity : AppCompatActivity() {
         itemChangePassword.visibility = if (provider == "GOOGLE") View.GONE else View.VISIBLE
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun showChangePasswordDialog() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -133,6 +138,7 @@ class AccountSettingsActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun changePassword(oldPassword: String, newPassword: String) {
         lifecycleScope.launch {
             try {

@@ -1,7 +1,9 @@
 package com.skylink.backend.controller
 
 import com.skylink.backend.dto.event.CreateEventRequest
+import com.skylink.backend.dto.event.EventDetailsResponse
 import com.skylink.backend.dto.event.EventResponse
+import com.skylink.backend.dto.event.IsParticipantResponse
 import com.skylink.backend.service.EventServiceInterface
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -59,15 +61,29 @@ class EventController(
 
     @Operation(summary = "Get all events")
     @GetMapping
-    fun listAllEvents(): List<EventResponse> = eventService.listAllEvents()
+    fun listAllEvents(
+        @AuthenticationPrincipal userEmail: String
+    ): List<EventDetailsResponse> = eventService.listAllEvents(userEmail)
 
     @Operation(summary = "Get events for a specific date")
     @GetMapping("/date")
-    fun listEventsForDate(@RequestParam date: LocalDate): List<EventResponse> =
-        eventService.listEventsForDate(date)
+    fun listEventsForDate(
+        @RequestParam date: LocalDate,
+        @AuthenticationPrincipal userEmail: String): List<EventDetailsResponse> =
+        eventService.listEventsForDate(date, userEmail)
 
     @Operation(summary = "Get all future events for current user")
     @GetMapping("/my")
-    fun listMyEvents(@AuthenticationPrincipal userEmail: String): List<EventResponse> =
+    fun listMyEvents(@AuthenticationPrincipal userEmail: String): List<EventDetailsResponse> =
         eventService.listUserFutureEvents(userEmail)
+
+    @Operation(summary = "Check if current user is enrolled in an event")
+    @GetMapping("/{eventId}/is-participant")
+    fun isParticipant(
+        @PathVariable eventId: Long,
+        @AuthenticationPrincipal userEmail: String
+    ): IsParticipantResponse {
+        val isParticipant = eventService.isUserParticipant(eventId, userEmail)
+        return IsParticipantResponse(isParticipant = isParticipant)
+    }
 }

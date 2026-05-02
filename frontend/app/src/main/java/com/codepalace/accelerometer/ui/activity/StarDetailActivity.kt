@@ -1,6 +1,7 @@
 package com.codepalace.accelerometer.ui.activity
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -9,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -57,6 +59,7 @@ class StarDetailActivity : AppCompatActivity() {
 
     private val viewModel: StarDetailViewModel by viewModels()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
@@ -258,6 +261,7 @@ class StarDetailActivity : AppCompatActivity() {
         ivImageLoadingLogo.visibility = visibility
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun loadFavoriteState() {
         if (!ApiClient.getSessionStorage().isLoggedIn()) {
             setFavoriteState(false)
@@ -274,6 +278,7 @@ class StarDetailActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun toggleFavorite() {
         if (starId == -1L || favoriteBusy) return
 

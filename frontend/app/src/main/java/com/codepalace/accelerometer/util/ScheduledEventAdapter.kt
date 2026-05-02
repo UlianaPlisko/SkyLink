@@ -12,51 +12,72 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.data.model.calendar.ScheduledEvent
 
-class ScheduledEventsAdapter :
-    ListAdapter<ScheduledEvent, ScheduledEventsAdapter.EventViewHolder>(EventDiffCallback()) {
+class ScheduledEventsAdapter(
+    private val onEnrollClick: (ScheduledEvent) -> Unit
+) : ListAdapter<ScheduledEvent, ScheduledEventsAdapter.EventViewHolder>(EventDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_scheduled_event, parent, false)
-        return EventViewHolder(view)
+        return EventViewHolder(view, onEnrollClick)
     }
 
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
-        val event = getItem(position)
-        holder.bind(event)
+        holder.bind(getItem(position))
     }
 
-    class EventViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class EventViewHolder(
+        itemView: View,
+        private val onEnrollClick: (ScheduledEvent) -> Unit
+    ) : RecyclerView.ViewHolder(itemView) {
 
         private val tvEventName: TextView = itemView.findViewById(R.id.tvEventName)
         private val tvDescription: TextView = itemView.findViewById(R.id.tvDescription)
         private val tvLocation: TextView = itemView.findViewById(R.id.tvLocation)
+        private val labelStart: TextView = itemView.findViewById(R.id.labelStart)
         private val tvStartTime: TextView = itemView.findViewById(R.id.tvStartTime)
+        private val labelEnd: TextView = itemView.findViewById(R.id.labelEnd)
         private val tvEndTime: TextView = itemView.findViewById(R.id.tvEndTime)
+        private val labelCapacity: TextView = itemView.findViewById(R.id.labelCapacity)
         private val tvCapacity: TextView = itemView.findViewById(R.id.tvCapacity)
-        private val btnSave: Button = itemView.findViewById(R.id.btnSave)
-        private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
         private val btnEnroll: Button = itemView.findViewById(R.id.btnEnroll)
 
         fun bind(event: ScheduledEvent) {
             tvEventName.text = event.name
             tvDescription.text = event.description
+
+            // Location (hide row if null/empty)
             tvLocation.text = event.location
+            tvLocation.visibility = if (!event.location.isNullOrBlank()) View.VISIBLE else View.GONE
+
+            // Start time (always visible)
             tvStartTime.text = event.startTime
+
+            // End time (hide both label and value if null/empty)
             tvEndTime.text = event.endTime
+            val hasEndTime = !event.endTime.isNullOrBlank()
+            labelEnd.visibility = if (hasEndTime) View.VISIBLE else View.GONE
+            tvEndTime.visibility = if (hasEndTime) View.VISIBLE else View.GONE
+
+            // Capacity (hide both label and value if null/empty or "0")
             tvCapacity.text = event.capacity
+            val hasCapacity = !event.capacity.isNullOrBlank() && event.capacity != "0"
+            labelCapacity.visibility = if (hasCapacity) View.VISIBLE else View.GONE
+            tvCapacity.visibility = if (hasCapacity) View.VISIBLE else View.GONE
 
-            // TODO: Implement button click listeners
-            btnSave.setOnClickListener {
-                // Handle save event
-            }
-
-            btnDelete.setOnClickListener {
-                // Handle delete event
+            // Enroll button
+            if (event.isEnrolled) {
+                btnEnroll.text = "Sign out"
+                btnEnroll.isEnabled = true
+                btnEnroll.alpha = 0.85f
+            } else {
+                btnEnroll.text = "Enroll"
+                btnEnroll.isEnabled = true
+                btnEnroll.alpha = 1.0f
             }
 
             btnEnroll.setOnClickListener {
-                // Handle enroll event
+                onEnrollClick(event)
             }
         }
     }

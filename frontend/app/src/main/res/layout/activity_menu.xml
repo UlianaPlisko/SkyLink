@@ -29,7 +29,7 @@
             android:contentDescription="Back"
             android:padding="4dp"
             android:src="@drawable/ic_back"
-            android:tint="@color/color_accent" />
+            app:tint="@color/color_accent" />
 
         <TextView
             android:id="@+id/tvMenuTitle"

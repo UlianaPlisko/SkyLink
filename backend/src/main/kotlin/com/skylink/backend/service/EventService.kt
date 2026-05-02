@@ -1,6 +1,7 @@
 package com.skylink.backend.service
 
 import com.skylink.backend.dto.event.CreateEventRequest
+import com.skylink.backend.dto.event.EventDetailsResponse
 import com.skylink.backend.dto.event.EventResponse
 import com.skylink.backend.model.EventParticipantId
 import com.skylink.backend.model.entity.Event
@@ -96,27 +97,40 @@ class EventService(
         eventParticipantRepository.delete(participant)
     }
 
-    override fun listAllEvents(): List<EventResponse> {
+    override fun listAllEvents(userEmail: String): List<EventDetailsResponse> {
         val events = eventRepository.findByStartAtAfter(Instant.now())
-        return events.map { mapToEventResponse(it) }
+        val user = userRepository.findByEmail(userEmail)
+            .orElseThrow { BadCredentialsException("User not found") }
+        return mapToEventDetailResponses(events, user.id)
     }
 
-    override fun listEventsForDate(date: LocalDate): List<EventResponse> {
+    override fun listEventsForDate(date: LocalDate, userEmail: String): List<EventDetailsResponse> {
         val startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val user = userRepository.findByEmail(userEmail)
+            .orElseThrow { BadCredentialsException("User not found") }
         val endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant()
-
         val events = eventRepository.findByStartAtBetween(startOfDay, endOfDay)
-        return events.map { mapToEventResponse(it) }
+        return mapToEventDetailResponses(events, user.id)
     }
 
-    override fun listUserFutureEvents(userEmail: String): List<EventResponse> {
+    override fun listUserFutureEvents(userEmail: String): List<EventDetailsResponse> {
         val user = userRepository.findByEmail(userEmail)
             .orElseThrow { BadCredentialsException("User not found") }
 
         val todayStart = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant()
-
         val events = eventRepository.findUserEventsFromToday(user.id, todayStart)
-        return events.map { mapToEventResponse(it) }
+        return mapToEventDetailResponses(events, user.id)
+    }
+
+    override fun isUserParticipant(eventId: Long, userEmail: String): Boolean {
+
+        val user = userRepository.findByEmail(userEmail)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "User not found") }
+
+        val event = eventRepository.findById(eventId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found") }
+
+        return eventParticipantRepository.existsByIdEventIdAndIdUserId(event.id, user.id)
     }
 
     private fun mapToEventResponse(event: Event): EventResponse {
@@ -131,5 +145,40 @@ class EventService(
             startAt = event.startAt,
             creatorDisplayName = creatorName
         )
+    }
+
+    private fun mapToEventDetailResponses(
+        events: List<Event>,
+        userId: Long
+    ): List<EventDetailsResponse> {
+
+        if (events.isEmpty()) return emptyList()
+
+        val eventIds = events.mapNotNull { it.id }
+
+        val participatedIds = eventParticipantRepository
+            .findParticipatedEventIds(userId, eventIds)
+            .toSet()
+
+        val countMap = eventParticipantRepository
+            .countParticipantsByEventIds(eventIds)
+            .associate { it.getEventId() to it.getParticipantCount() }
+
+        return events.map { event ->
+            val creator = userRepository.findById(event.creatorId)
+                .orElseThrow { BadCredentialsException("Creator not found") }
+
+            EventDetailsResponse(
+                id = event.id,
+                title = event.title,
+                description = event.description,
+                eventType = event.eventType.name,
+                startAt = event.startAt,
+                endAt = event.endAt,
+                creatorId = creator.id,
+                participantsCount = (countMap[event.id] ?: 0L).toInt(),
+                isParticipant = participatedIds.contains(event.id) // ✅ HERE
+            )
+        }
     }
 }
