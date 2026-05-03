@@ -1,11 +1,18 @@
 package com.codepalace.accelerometer.ui.activity
 
+import android.app.AlertDialog
+import android.content.res.ColorStateList
 import android.content.Intent
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -105,7 +112,11 @@ class StarDetailActivity : AppCompatActivity() {
         }
 
         btnFavorite.setOnClickListener {
-            toggleFavorite()
+            if (isFavorite) {
+                toggleFavorite()
+            } else {
+                showAddFavoriteDialog()
+            }
         }
 
         starId = intent.getLongExtra("star_id", -1L)
@@ -279,7 +290,80 @@ class StarDetailActivity : AppCompatActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+    private fun showAddFavoriteDialog() {
+        if (starId == -1L || favoriteBusy) return
+
+        if (!ApiClient.getSessionStorage().isLoggedIn()) {
+            showAppMessage("Log in to save favorites.", MessageKind.INFO)
+            startActivity(Intent(this, AuthActivity::class.java))
+            return
+        }
+
+        val input = EditText(this).apply {
+            hint = "Optional note"
+            inputType = InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+                    InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            maxLines = 5
+            setSingleLine(false)
+            setPadding(32, 18, 32, 18)
+            setTextColor(getColor(R.color.color_text_on_background))
+            setHintTextColor(getColor(R.color.color_text_muted))
+            backgroundTintList = ColorStateList.valueOf(getColor(R.color.color_accent))
+        }
+
+        val dialogContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 22.dp(), 24.dp(), 8.dp())
+
+            addView(TextView(this@StarDetailActivity).apply {
+                text = "Add to favorites"
+                setTextColor(getColor(R.color.color_accent))
+                textSize = 20f
+                typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+            })
+
+            addView(TextView(this@StarDetailActivity).apply {
+                text = tvTitle.text.toString()
+                setTextColor(getColor(R.color.color_text_on_background))
+                textSize = 14f
+                alpha = 0.82f
+                typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 6.dp()
+                    bottomMargin = 12.dp()
+                }
+            })
+
+            addView(input)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogContent)
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+        styleNoteDialog(dialog)
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val note = input.text.toString().cleanFavoriteNote()
+            toggleFavorite(note)
+            dialog.dismiss()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun toggleFavorite() {
+        toggleFavorite(note = null)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun toggleFavorite(note: String?) {
         if (starId == -1L || favoriteBusy) return
 
         if (!ApiClient.getSessionStorage().isLoggedIn()) {
@@ -298,7 +382,12 @@ class StarDetailActivity : AppCompatActivity() {
                     setFavoriteState(false)
                     showAppMessage("Removed from favorites.", MessageKind.SUCCESS)
                 } else {
-                    val favorite = ApiClient.favoriteApi.addFavorite(FavoriteRequest(spaceObjectId = starId))
+                    val favorite = ApiClient.favoriteApi.addFavorite(
+                        FavoriteRequest(
+                            spaceObjectId = starId,
+                            note = note.cleanFavoriteNote()
+                        )
+                    )
                     favoriteRepository.cacheFavorite(favorite)
                     setFavoriteState(true)
                     showAppMessage("Added to favorites.", MessageKind.SUCCESS)
@@ -340,4 +429,24 @@ class StarDetailActivity : AppCompatActivity() {
             "Add to favorites"
         }
     }
+
+    private fun styleNoteDialog(dialog: AlertDialog) {
+        dialog.window?.setBackgroundDrawable(
+            GradientDrawable().apply {
+                setColor(getColor(R.color.color_primary))
+                cornerRadius = 16.dp().toFloat()
+                setStroke(1.dp(), getColor(R.color.color_accent))
+            }
+        )
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.color_accent))
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.color_text_muted))
+    }
+
+    private fun Int.dp(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+}
+
+private fun String?.cleanFavoriteNote(): String? {
+    return this?.trim()?.takeIf { it.isNotBlank() }
 }

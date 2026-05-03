@@ -2,6 +2,7 @@ package com.skylink.backend.controller
 
 import com.skylink.backend.dto.favorite.FavoriteRequest
 import com.skylink.backend.dto.favorite.FavoriteResponse
+import com.skylink.backend.dto.favorite.FavoriteUpdateRequest
 import com.skylink.backend.service.FavoriteService
 import com.skylink.backend.service.user.UserProfileService
 import io.swagger.v3.oas.annotations.Operation
@@ -33,6 +34,17 @@ class FavoriteController(
     ): FavoriteResponse {
         val user = userService.getByEmail(principal.name)
         return favoriteService.addFavorite(user.id, request)
+    }
+
+    @Operation(summary = "Update favorite note")
+    @PatchMapping("/{spaceObjectId}")
+    fun updateFavorite(
+        @PathVariable spaceObjectId: Long,
+        @RequestBody request: FavoriteUpdateRequest,
+        principal: Principal
+    ): FavoriteResponse {
+        val user = userService.getByEmail(principal.name)
+        return favoriteService.updateFavorite(user.id, spaceObjectId, request)
     }
 
     @Operation(summary = "Remove item from favorites")

@@ -30,9 +30,9 @@ class AppSettingsStorage(context: Context) {
         get() = prefs.getString(KEY_LONGITUDE, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_LONGITUDE, value).apply()
 
-    var cityName: String
-        get() = prefs.getString(KEY_CITY_NAME, "").orEmpty()
-        set(value) = prefs.edit().putString(KEY_CITY_NAME, value).apply()
+//    var cityName: String
+//        get() = prefs.getString(KEY_CITY_NAME, "").orEmpty()
+//        set(value) = prefs.edit().putString(KEY_CITY_NAME, value).apply()
 
     fun manualLatitude(): Double? = latitude.toDoubleOrNull()
 
@@ -45,6 +45,6 @@ class AppSettingsStorage(context: Context) {
         private const val KEY_AUTO_LOCATION = "auto_location"
         private const val KEY_LATITUDE = "latitude"
         private const val KEY_LONGITUDE = "longitude"
-        private const val KEY_CITY_NAME = "city_name"
+//        private const val KEY_CITY_NAME = "city_name"
     }
 }

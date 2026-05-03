@@ -145,6 +145,27 @@
                 android:textColor="@color/color_primary"
                 android:textSize="24sp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoogle"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_auth_button"
+                android:gravity="center"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="@string/continue_with_google"
+                android:textAllCaps="false"
+                android:textColor="@color/color_primary"
+                android:textSize="20sp"
+                app:backgroundTint="@null"
+                app:icon="@drawable/google_icon"
+                app:iconGravity="start"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@null" />
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
+import com.codepalace.accelerometer.auth.GoogleSignInCoordinator
 import com.codepalace.accelerometer.data.repository.AuthRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
@@ -21,6 +22,7 @@ import java.io.IOException
 class LoginActivity : AppCompatActivity() {
 
     private val authRepository = AuthRepository()
+    private lateinit var googleSignInCoordinator: GoogleSignInCoordinator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,7 +33,9 @@ class LoginActivity : AppCompatActivity() {
         val etLoginUsername = findViewById<EditText>(R.id.etLoginUsername)
         val etLoginPassword = findViewById<EditText>(R.id.etLoginPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val btnGoogle = findViewById<Button>(R.id.btnGoogle)
         val tvGoSignupFromLogin = findViewById<TextView>(R.id.tvGoSignupFromLogin)
+        googleSignInCoordinator = GoogleSignInCoordinator(this)
 
         btnBack.setOnClickListener {
             finish()
@@ -50,6 +54,10 @@ class LoginActivity : AppCompatActivity() {
                 password.isBlank() -> etLoginPassword.error = "Password is required"
                 else -> doLogin(email, password)
             }
+        }
+
+        btnGoogle.setOnClickListener {
+            googleSignInCoordinator.start()
         }
     }
 

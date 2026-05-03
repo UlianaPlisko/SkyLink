@@ -5,6 +5,7 @@
 
     <!-- Main palette -->
     <color name="color_primary">#22234C</color>
+    <color name="launcher_icon_background">#22234C</color>
     <color name="color_secondary">#4E5186</color>
     <color name="color_secondary_variant">#5A5E99</color>
     <color name="color_accent">#858163</color>

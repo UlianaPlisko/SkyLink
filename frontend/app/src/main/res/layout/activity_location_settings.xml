@@ -103,19 +103,19 @@
             android:textColorHint="@color/color_primary"
             android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etCityName"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_card_menu"
-            android:hint="City name"
-            android:inputType="textCapWords"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:textColor="@color/color_primary"
-            android:textColorHint="@color/color_primary"
-            android:textSize="14sp" />
+<!--        <EditText-->
+<!--            android:id="@+id/etCityName"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="44dp"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:background="@drawable/bg_card_menu"-->
+<!--            android:hint="City name"-->
+<!--            android:inputType="textCapWords"-->
+<!--            android:paddingStart="16dp"-->
+<!--            android:paddingEnd="16dp"-->
+<!--            android:textColor="@color/color_primary"-->
+<!--            android:textColorHint="@color/color_primary"-->
+<!--            android:textSize="14sp" />-->
 
         <Button
             android:id="@+id/btnSaveLocation"

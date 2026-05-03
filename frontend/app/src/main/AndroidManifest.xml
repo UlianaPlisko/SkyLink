@@ -30,6 +30,7 @@
         <activity android:name=".ui.activity.LocationSettingsActivity" />
         <activity android:name=".ui.activity.GoogleCompleteActivity" />
         <activity android:name=".ui.activity.FavoritesActivity" />
+        <activity android:name=".ui.activity.MyEventsActivity" />
         <activity android:name=".ui.activity.SkyCulturesActivity" />
         <activity android:name=".ui.activity.CreateEventActivity"
             tools:targetApi="26" />

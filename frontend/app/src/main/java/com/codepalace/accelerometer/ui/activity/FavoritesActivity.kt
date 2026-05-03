@@ -1,12 +1,18 @@
 package com.codepalace.accelerometer.ui.activity
 
 import com.codepalace.accelerometer.R
+import android.app.AlertDialog
+import android.content.res.ColorStateList
 import android.content.Intent
+import android.graphics.Paint
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -21,6 +27,7 @@ import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.repository.FavoriteRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import com.codepalace.accelerometer.util.DisplayDateFormatter
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -50,8 +57,6 @@ class FavoritesActivity : AppCompatActivity() {
             celestialApi = ApiClient.celestialApi,
             database = AppDatabase.getDatabase(this)
         )
-
-        applyTopBarInsets(findViewById(R.id.headerBar))
 
         titleText = findViewById(R.id.tvFavoritesTitle)
         container = findViewById(R.id.favoritesContainer)
@@ -251,19 +256,23 @@ class FavoritesActivity : AppCompatActivity() {
         }
 
         val noteText = TextView(this).apply {
-            text = favorite.note
-                ?.takeIf { it.isNotBlank() }
-                ?.let { "Note: $it" }
-                ?: "No note"
-
+            text = formatFavoriteNote(favorite.note)
             setTextColor(getColor(R.color.color_primary))
             textSize = 13f
             typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-            alpha = 0.7f
+            alpha = if (favorite.note.isNullOrBlank()) 0.55f else 0.7f
+            isClickable = true
+            isFocusable = true
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            contentDescription = "Edit note for ${spaceObject.displayName}"
+
+            setOnClickListener {
+                showEditNoteDialog(favorite)
+            }
         }
 
         val addedAtText = TextView(this).apply {
-            text = favorite.addedAt?.let { "Added: $it" } ?: ""
+            text = DisplayDateFormatter.formatAddedOn(favorite.addedAt).orEmpty()
             setTextColor(getColor(R.color.color_primary))
             textSize = 12f
             typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
@@ -287,7 +296,127 @@ class FavoritesActivity : AppCompatActivity() {
         return card
     }
 
+    private fun showEditNoteDialog(favorite: FavoriteResponse) {
+        val input = EditText(this).apply {
+            setText(favorite.note.orEmpty())
+            hint = "Add a note"
+            inputType = InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+                    InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            maxLines = 5
+            setSingleLine(false)
+            setSelection(text.length)
+            setPadding(32, 18, 32, 18)
+            setTextColor(getColor(R.color.color_text_on_background))
+            setHintTextColor(getColor(R.color.color_text_muted))
+            backgroundTintList = ColorStateList.valueOf(getColor(R.color.color_accent))
+        }
+
+        val dialogContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 22.dp(), 24.dp(), 8.dp())
+
+            addView(TextView(this@FavoritesActivity).apply {
+                text = "Favorite note"
+                setTextColor(getColor(R.color.color_accent))
+                textSize = 20f
+                typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+            })
+
+            addView(TextView(this@FavoritesActivity).apply {
+                text = favorite.spaceObject.displayName
+                setTextColor(getColor(R.color.color_text_on_background))
+                textSize = 14f
+                alpha = 0.82f
+                typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 6.dp()
+                    bottomMargin = 12.dp()
+                }
+            })
+
+            addView(input)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogContent)
+            .setPositiveButton("Save", null)
+            .setNeutralButton("Clear", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+        styleNoteDialog(dialog)
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val note = input.text.toString()
+            if (note.length > MAX_NOTE_LENGTH) {
+                input.error = "Keep note under $MAX_NOTE_LENGTH characters"
+                return@setOnClickListener
+            }
+
+            updateFavoriteNote(favorite, note)
+            dialog.dismiss()
+        }
+
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+            updateFavoriteNote(favorite, null)
+            dialog.dismiss()
+        }
+    }
+
+    private fun updateFavoriteNote(favorite: FavoriteResponse, note: String?) {
+        lifecycleScope.launch {
+            try {
+                favoriteRepository.updateFavoriteNoteOnline(favorite, note)
+                showFavorites(favoriteRepository.getCachedFavorites())
+                showAppMessage("Favorite note saved.", MessageKind.SUCCESS)
+            } catch (e: HttpException) {
+                showAppMessage(
+                    ApiErrorMapper.fromHttpException(e, "Could not save favorite note."),
+                    MessageKind.ERROR
+                )
+            } catch (_: IOException) {
+                favoriteRepository.updateFavoriteNoteCached(favorite, note)
+                showFavorites(favoriteRepository.getCachedFavorites())
+                showAppMessage("Note saved on this device.", MessageKind.INFO)
+            } catch (e: Exception) {
+                showAppMessage(
+                    ApiErrorMapper.fromThrowable(e, "Could not save favorite note."),
+                    MessageKind.ERROR
+                )
+            }
+        }
+    }
+
     private fun Int.dp(): Int {
         return (this * resources.displayMetrics.density).toInt()
+    }
+
+    private fun formatFavoriteNote(note: String?): String {
+        return note
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "Note: $it" }
+            ?: "Add note"
+    }
+
+    private fun styleNoteDialog(dialog: AlertDialog) {
+        dialog.window?.setBackgroundDrawable(
+            GradientDrawable().apply {
+                setColor(getColor(R.color.color_primary))
+                cornerRadius = 16.dp().toFloat()
+                setStroke(1.dp(), getColor(R.color.color_accent))
+            }
+        )
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(getColor(R.color.color_accent))
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(getColor(R.color.color_accent))
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(getColor(R.color.color_text_muted))
+    }
+
+    companion object {
+        private const val MAX_NOTE_LENGTH = 500
     }
 }

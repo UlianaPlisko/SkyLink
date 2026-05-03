@@ -3,6 +3,7 @@ package com.skylink.backend.service
 import com.skylink.backend.dto.celestial.SpaceObjectSummary
 import com.skylink.backend.dto.favorite.FavoriteRequest
 import com.skylink.backend.dto.favorite.FavoriteResponse
+import com.skylink.backend.dto.favorite.FavoriteUpdateRequest
 import com.skylink.backend.model.entity.Favorite
 import com.skylink.backend.repository.FavoriteRepository
 import com.skylink.backend.repository.SpaceObjectRepository
@@ -45,6 +46,19 @@ class FavoriteService(
             note = request.note,
             visibility = request.visibility ?: 1.0
         )
+
+        return favoriteRepository.save(favorite).toResponse()
+    }
+
+    @Transactional
+    fun updateFavorite(userId: Long, spaceObjectId: Long, request: FavoriteUpdateRequest): FavoriteResponse {
+        val favorite = favoriteRepository.findByUserIdAndSpaceObjectId(userId, spaceObjectId)
+            .orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Favorite not found")
+            }
+
+        favorite.note = request.note?.trim()?.takeIf { it.isNotBlank() }
+        request.visibility?.let { favorite.visibility = it }
 
         return favoriteRepository.save(favorite).toResponse()
     }

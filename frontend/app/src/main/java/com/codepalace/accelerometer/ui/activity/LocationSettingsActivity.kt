@@ -18,7 +18,7 @@ class LocationSettingsActivity : AppCompatActivity() {
     private lateinit var switchAutoLocation: SwitchCompat
     private lateinit var etLatitude: EditText
     private lateinit var etLongitude: EditText
-    private lateinit var etCityName: EditText
+//    private lateinit var etCityName: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,12 +31,12 @@ class LocationSettingsActivity : AppCompatActivity() {
         switchAutoLocation = findViewById(R.id.switchAutoLocation)
         etLatitude = findViewById(R.id.etLatitude)
         etLongitude = findViewById(R.id.etLongitude)
-        etCityName = findViewById(R.id.etCityName)
+//        etCityName = findViewById(R.id.etCityName)
 
         switchAutoLocation.isChecked = settingsStorage.autoLocationEnabled
         etLatitude.setText(settingsStorage.latitude)
         etLongitude.setText(settingsStorage.longitude)
-        etCityName.setText(settingsStorage.cityName)
+//        etCityName.setText(settingsStorage.cityName)
 
         updateManualFieldsState()
 
@@ -54,10 +54,10 @@ class LocationSettingsActivity : AppCompatActivity() {
         val manualEnabled = !switchAutoLocation.isChecked
         etLatitude.isEnabled = manualEnabled
         etLongitude.isEnabled = manualEnabled
-        etCityName.isEnabled = manualEnabled
+//        etCityName.isEnabled = manualEnabled
         etLatitude.alpha = if (manualEnabled) 1f else 0.55f
         etLongitude.alpha = if (manualEnabled) 1f else 0.55f
-        etCityName.alpha = if (manualEnabled) 1f else 0.55f
+//        etCityName.alpha = if (manualEnabled) 1f else 0.55f
     }
 
     private fun saveLocation() {
@@ -85,7 +85,7 @@ class LocationSettingsActivity : AppCompatActivity() {
         settingsStorage.autoLocationEnabled = autoLocation
         settingsStorage.latitude = latitude
         settingsStorage.longitude = longitude
-        settingsStorage.cityName = etCityName.text.toString().trim()
+//        settingsStorage.cityName = etCityName.text.toString().trim()
 
         showAppMessage("Location settings saved.", MessageKind.SUCCESS)
     }

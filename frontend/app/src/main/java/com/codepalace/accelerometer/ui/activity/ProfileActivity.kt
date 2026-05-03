@@ -21,15 +21,19 @@ import coil.load
 import coil.transform.CircleCropTransformation
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
+import com.codepalace.accelerometer.api.dto.FavoriteResponse
 import com.codepalace.accelerometer.api.dto.UpdateProfileRequest
 import com.codepalace.accelerometer.api.dto.UserProfileResponse
 import com.codepalace.accelerometer.config.ApiConfig
+import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.ProfileImageCache
+import com.codepalace.accelerometer.data.model.dto.EventResponse
+import com.codepalace.accelerometer.data.repository.FavoriteRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import com.codepalace.accelerometer.util.DisplayDateFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -46,7 +50,12 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var avatarInitial: TextView
     private lateinit var tvName: TextView
     private lateinit var tvRole: TextView
+    private lateinit var tvFavoritesPreviewTitle: TextView
+    private lateinit var tvFavoritesPreviewSubtitle: TextView
+    private lateinit var tvEventsPreviewTitle: TextView
+    private lateinit var tvEventsPreviewSubtitle: TextView
     private lateinit var profileImageCache: ProfileImageCache
+    private lateinit var favoriteRepository: FavoriteRepository
 
     private var currentProfile: UserProfileResponse? = null
 
@@ -68,8 +77,11 @@ class ProfileActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_profile)
         profileImageCache = ProfileImageCache(this)
-
-        applyTopBarInsets(findViewById(R.id.headerBar))
+        favoriteRepository = FavoriteRepository(
+            favoriteApi = ApiClient.favoriteApi,
+            celestialApi = ApiClient.celestialApi,
+            database = AppDatabase.getDatabase(this)
+        )
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
@@ -78,6 +90,10 @@ class ProfileActivity : AppCompatActivity() {
         avatarInitial = findViewById(R.id.tvProfileInitial)
         tvName = findViewById(R.id.tvProfileName)
         tvRole = findViewById(R.id.tvProfileRole)
+        tvFavoritesPreviewTitle = findViewById(R.id.tvFavoritesPreviewTitle)
+        tvFavoritesPreviewSubtitle = findViewById(R.id.tvFavoritesPreviewSubtitle)
+        tvEventsPreviewTitle = findViewById(R.id.tvEventsPreviewTitle)
+        tvEventsPreviewSubtitle = findViewById(R.id.tvEventsPreviewSubtitle)
 
         val editPicture = findViewById<TextView>(R.id.tvEditProfilePicture)
         val avatarFrame = findViewById<FrameLayout>(R.id.avatarFrame)
@@ -92,11 +108,18 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         findViewById<LinearLayout>(R.id.eventsSection).setOnClickListener {
-            showAppMessage("Events will appear here soon.", MessageKind.INFO)
+            startActivity(Intent(this, MyEventsActivity::class.java))
         }
 
         applySessionProfile()
         loadProfile()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::favoriteRepository.isInitialized) {
+            loadProfilePreviews()
+        }
     }
 
     private fun applySessionProfile() {
@@ -127,6 +150,94 @@ class ProfileActivity : AppCompatActivity() {
                 showAppMessage("Offline mode: showing saved profile.", MessageKind.INFO)
             }
         }
+    }
+
+    private fun loadProfilePreviews() {
+        loadFavoritesPreview()
+        loadEventsPreview()
+    }
+
+    private fun loadFavoritesPreview() {
+        lifecycleScope.launch {
+            val cachedFavorites = favoriteRepository.getCachedFavorites()
+            if (cachedFavorites.isNotEmpty()) {
+                showFavoritePreview(cachedFavorites.sortedByDescending { it.addedAt.orEmpty() }.first())
+            } else {
+                showFavoritePreviewStatus("Loading favorites...")
+            }
+
+            try {
+                val favorites = favoriteRepository.refreshFavorites()
+                val previewFavorite = favorites
+                    .sortedByDescending { it.addedAt.orEmpty() }
+                    .firstOrNull()
+
+                if (previewFavorite == null) {
+                    showFavoritePreviewStatus("No favorite objects yet.")
+                } else {
+                    showFavoritePreview(previewFavorite)
+                }
+            } catch (_: IOException) {
+                if (cachedFavorites.isEmpty()) {
+                    showFavoritePreviewStatus("Favorites are unavailable offline.")
+                }
+            } catch (_: Exception) {
+                if (cachedFavorites.isEmpty()) {
+                    showFavoritePreviewStatus("Could not load favorites.")
+                }
+            }
+        }
+    }
+
+    private fun loadEventsPreview() {
+        lifecycleScope.launch {
+            showEventPreviewStatus("Loading events...")
+
+            try {
+                val events = ApiClient.eventApi.getMyEvents()
+                if (events.isEmpty()) {
+                    showEventPreviewStatus("No enrolled events yet.")
+                } else {
+                    showEventPreview(events.first())
+                }
+            } catch (_: IOException) {
+                showEventPreviewStatus("Events are unavailable offline.")
+            } catch (_: Exception) {
+                showEventPreviewStatus("Could not load events.")
+            }
+        }
+    }
+
+    private fun showFavoritePreview(favorite: FavoriteResponse) {
+        val spaceObject = favorite.spaceObject
+        val addedAt = DisplayDateFormatter.formatAddedOn(favorite.addedAt)
+
+        tvFavoritesPreviewTitle.text = spaceObject.displayName
+        tvFavoritesPreviewSubtitle.text = listOfNotNull(
+            spaceObject.objectType.takeIf { it.isNotBlank() },
+            addedAt
+        ).joinToString(" / ")
+    }
+
+    private fun showFavoritePreviewStatus(message: String) {
+        tvFavoritesPreviewTitle.text = message
+        tvFavoritesPreviewSubtitle.text = ""
+    }
+
+    private fun showEventPreview(event: EventResponse) {
+        val startsAt = DisplayDateFormatter.formatEventStart(event.startAt.toString())
+        val eventType = DisplayDateFormatter.formatEnumLabel(event.eventType)
+
+        tvEventsPreviewTitle.text = event.title
+        tvEventsPreviewSubtitle.text = listOfNotNull(
+            eventType.takeIf { it.isNotBlank() },
+            startsAt?.let { "Starts $it" }
+        ).joinToString(" / ")
+    }
+
+    private fun showEventPreviewStatus(message: String) {
+        tvEventsPreviewTitle.text = message
+        tvEventsPreviewSubtitle.text = ""
     }
 
     private fun applyProfile(profile: UserProfileResponse) {

@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotNull
 
 data class FavoriteRequest(
     @field:NotNull val spaceObjectId: Long,
-    val note: String?,
+    val note: String? = null,
     val visibility: Double? = 1.0
 )

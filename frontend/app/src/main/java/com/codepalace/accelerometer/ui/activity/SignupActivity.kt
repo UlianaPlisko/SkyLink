@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
+import com.codepalace.accelerometer.auth.GoogleSignInCoordinator
 import com.codepalace.accelerometer.data.model.enums.UserRole
 import com.codepalace.accelerometer.data.repository.AuthRepository
 import com.codepalace.accelerometer.ui.MessageKind
@@ -23,12 +24,12 @@ import java.io.IOException
 class SignupActivity : AppCompatActivity() {
 
     private val authRepository = AuthRepository()
+    private lateinit var googleSignInCoordinator: GoogleSignInCoordinator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
         setContentView(R.layout.activity_signup)
-        applyTopBarInsets(findViewById(R.id.headerBar), extraTopDp = 0)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
         val etSignupUsername = findViewById<EditText>(R.id.etSignupUsername)
@@ -37,7 +38,9 @@ class SignupActivity : AppCompatActivity() {
         val etSignupRepeatPassword = findViewById<EditText>(R.id.etSignupRepeatPassword)
         val rgRole = findViewById<RadioGroup>(R.id.rgRole)
         val btnSignup = findViewById<Button>(R.id.btnSignup)
+        val btnGoogle = findViewById<Button>(R.id.btnGoogle)
         val tvGoLoginFromSignup = findViewById<TextView>(R.id.tvGoLoginFromSignup)
+        googleSignInCoordinator = GoogleSignInCoordinator(this)
 
         btnBack.setOnClickListener {
             finish()
@@ -82,6 +85,10 @@ class SignupActivity : AppCompatActivity() {
                     role = role
                 )
             }
+        }
+
+        btnGoogle.setOnClickListener {
+            googleSignInCoordinator.start()
         }
     }
 

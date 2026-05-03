@@ -132,6 +132,15 @@ class MainActivity : AppCompatActivity() {
         starPreviewPanel = findViewById(R.id.starPreviewPanel)
         tvPreviewName = findViewById(R.id.tvPreviewName)
         tvPreviewType = findViewById(R.id.tvPreviewType)
+        starPreviewPanel.setOnClickListener {
+            openSelectedStarDetails()
+        }
+        tvPreviewName.setOnClickListener {
+            openSelectedStarDetails()
+        }
+        tvPreviewType.setOnClickListener {
+            openSelectedStarDetails()
+        }
 
         searchOverlay    = findViewById(R.id.searchOverlay)
         searchInput      = findViewById(R.id.searchInput)
@@ -266,6 +275,7 @@ class MainActivity : AppCompatActivity() {
             tvPreviewType.text = "Tap to view details"
             if (!starPreviewPanel.isVisible) {
                 starPreviewPanel.visibility = View.VISIBLE
+                starPreviewPanel.bringToFront()
                 starPreviewPanel.startAnimation(
                     android.view.animation.AnimationUtils.loadAnimation(
                         this,
@@ -295,17 +305,6 @@ class MainActivity : AppCompatActivity() {
 
                 starPreviewPanel.startAnimation(anim)
             }
-        }
-
-        starPreviewPanel.setOnClickListener {
-            val star = selectedStar ?: return@setOnClickListener
-
-            val intent = Intent(this, StarDetailActivity::class.java)
-            intent.putExtra("star_id", star.spaceObjectId)
-            intent.putExtra("star_name", star.name)
-
-            startActivity(intent)
-            overridePendingTransition(R.anim.slide_up_in, R.anim.stay)
         }
 
         halfCompassView = findViewById(R.id.halfCompassView)
@@ -509,6 +508,23 @@ class MainActivity : AppCompatActivity() {
                 }
                 .start()
         }
+    }
+
+    private fun openSelectedStarDetails() {
+        val star = selectedStar ?: return
+
+        if (star.spaceObjectId <= 0L) {
+            showAppMessage("Could not open details for this object.", MessageKind.ERROR)
+            return
+        }
+
+        val intent = Intent(this, StarDetailActivity::class.java).apply {
+            putExtra("star_id", star.spaceObjectId)
+            putExtra("star_name", star.name)
+        }
+
+        startActivity(intent)
+        overridePendingTransition(R.anim.slide_up_in, R.anim.stay)
     }
 
     private fun View.updateMargins(

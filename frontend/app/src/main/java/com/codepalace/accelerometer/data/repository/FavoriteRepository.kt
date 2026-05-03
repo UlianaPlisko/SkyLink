@@ -3,6 +3,7 @@ package com.codepalace.accelerometer.data.repository
 import com.codepalace.accelerometer.api.CelestialApi
 import com.codepalace.accelerometer.api.FavoriteApi
 import com.codepalace.accelerometer.api.dto.FavoriteResponse
+import com.codepalace.accelerometer.api.dto.FavoriteUpdateRequest
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.FavoriteEntity
 import com.codepalace.accelerometer.data.local.PendingFavoriteActionEntity
@@ -41,6 +42,24 @@ class FavoriteRepository(
         pendingFavoriteActionDao.deleteBySpaceObjectId(favorite.spaceObject.id)
         favoriteDao.insert(favorite.toEntity())
         cacheSummaryDetailsIfMissing(listOf(favorite))
+    }
+
+    suspend fun updateFavoriteNoteOnline(favorite: FavoriteResponse, note: String?): FavoriteResponse {
+        val updated = favoriteApi.updateFavorite(
+            spaceObjectId = favorite.spaceObject.id,
+            request = FavoriteUpdateRequest(
+                note = note.cleanNote(),
+                visibility = favorite.visibility
+            )
+        )
+        cacheFavorite(updated)
+        return updated
+    }
+
+    suspend fun updateFavoriteNoteCached(favorite: FavoriteResponse, note: String?): FavoriteResponse {
+        val updated = favorite.copy(note = note.cleanNote())
+        cacheFavorite(updated)
+        return updated
     }
 
     suspend fun removeFavoriteOnline(spaceObjectId: Long) {
@@ -186,4 +205,8 @@ class FavoriteRepository(
     companion object {
         private const val ACTION_DELETE = "DELETE"
     }
+}
+
+private fun String?.cleanNote(): String? {
+    return this?.trim()?.takeIf { it.isNotBlank() }
 }
