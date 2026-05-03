@@ -13,9 +13,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SpaceObjectDetailEntity::class,
         FavoriteEntity::class,
         PendingFavoriteActionEntity::class,
-        EventEntity::class
+        EventEntity::class,
+        ChatRoomEntity::class,
+        PendingChatActionEntity::class
     ],
-    version = 9,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingFavoriteActionDao(): PendingFavoriteActionDao
 
     abstract fun eventDao(): EventDao
+
+    abstract fun chatRoomDao(): ChatRoomDao
 
     companion object {
         @Volatile
@@ -109,6 +113,45 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS chat_rooms (
+                        id INTEGER PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        regionGeom TEXT,
+                        eventId INTEGER,
+                        createdBy INTEGER,
+                        createdAt TEXT,
+                        isSubscribed INTEGER NOT NULL DEFAULT 0,
+                        unreadCount INTEGER NOT NULL DEFAULT 0
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add userId column to existing chat_rooms
+                db.execSQL("ALTER TABLE chat_rooms ADD COLUMN userId INTEGER NOT NULL DEFAULT 0")
+
+                // Create pending actions table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS pending_chat_actions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        roomId INTEGER NOT NULL,
+                        action TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -121,7 +164,9 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .fallbackToDestructiveMigration(false)
                     .build()

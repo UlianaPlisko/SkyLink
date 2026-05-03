@@ -206,7 +206,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         btnChat.setOnClickListener {
-            showAppMessage("Chat will be available soon.", MessageKind.INFO)
+            if (!ApiClient.getSessionStorage().isLoggedIn()) {
+                showAppMessage("Log in to view calendar.", MessageKind.INFO)
+                startActivity(Intent(this, AuthActivity::class.java))
+            } else {
+            startActivity(Intent(this, ChatRoomsActivity::class.java))}
         }
 
         btnCalendar.setOnClickListener {

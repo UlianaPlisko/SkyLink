@@ -34,6 +34,9 @@
         <activity android:name=".ui.activity.SkyCulturesActivity" />
         <activity android:name=".ui.activity.CreateEventActivity"
             tools:targetApi="26" />
+        <activity android:name=".ui.activity.ChatRoomsActivity"
+            tools:targetApi="26" />
+        <activity android:name=".ui.activity.ChatActivity" />
 
 
 <!--        <activity-->

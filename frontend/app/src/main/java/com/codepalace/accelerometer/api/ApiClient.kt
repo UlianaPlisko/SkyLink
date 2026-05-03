@@ -32,8 +32,8 @@ object ApiClient {
     private val publicOkHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
             .build()
     }
 
@@ -41,8 +41,8 @@ object ApiClient {
         OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(sessionStorage))
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
             .build()
     }
 
@@ -87,6 +87,8 @@ object ApiClient {
     val eventApi: EventApi by lazy {
         authRetrofit.create(EventApi::class.java)
     }
+
+    val chatApi: ChatApi by lazy { authRetrofit.create(ChatApi::class.java) }
 
     fun getSessionStorage(): SessionStorage = sessionStorage
 }

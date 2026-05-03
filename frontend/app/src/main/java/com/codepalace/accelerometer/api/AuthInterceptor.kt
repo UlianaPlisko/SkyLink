@@ -21,7 +21,7 @@ class AuthInterceptor(
         }
 
         val response = chain.proceed(request)
-        if (!token.isNullOrBlank() && (response.code == 401 || response.code == 403)) {
+        if (!token.isNullOrBlank() && (response.code == 401)) {
             sessionStorage.clearAuth()
         }
 
