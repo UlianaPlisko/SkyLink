@@ -12,11 +12,13 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codepalace.accelerometer.R
+import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.ui.viewmodel.ChatViewModel
@@ -42,7 +44,8 @@ class ChatActivity : AppCompatActivity() {
         object : ViewModelProvider.Factory {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return ChatViewModel(chatRoomId) as T
+                val db = AppDatabase.getDatabase(this@ChatActivity)
+                return ChatViewModel(chatRoomId, db.chatDao()) as T
             }
         }
     }

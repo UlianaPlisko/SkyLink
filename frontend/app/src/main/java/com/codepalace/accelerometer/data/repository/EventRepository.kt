@@ -11,6 +11,7 @@ import com.codepalace.accelerometer.data.model.dto.CreateEventRequest
 import com.codepalace.accelerometer.data.model.dto.EventResponse
 import com.codepalace.accelerometer.util.toDomain
 import com.codepalace.accelerometer.util.toEntity
+import com.codepalace.accelerometer.util.toEventResponse
 import com.codepalace.accelerometer.util.toScheduledEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -147,6 +148,37 @@ class EventRepository(
         withContext(Dispatchers.IO) {
             eventDao.deleteAll()
             Log.d("EventRepository", "All events cache cleared successfully")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getMyEvents(): List<EventResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val apiEvents = api.getMyEvents()
+                eventDao.insertAll(apiEvents.sortedBy { it.startAt }.map { it.toEntity() })
+                apiEvents // already EventResponse, return directly
+            } catch (e: Exception) {
+                Log.e("EventRepository", "getMyEvents API failed → using cache", e)
+                eventDao.getMyEvents().map { it.toEventResponse() } // EventEntity → EventResponse
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getCachedMyEvents(): List<EventResponse> {
+        return withContext(Dispatchers.IO) {
+            eventDao.getMyEvents().map { it.toEventResponse() }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun refreshMyEvents(): List<EventResponse> {
+        return withContext(Dispatchers.IO) {
+            val apiEvents = api.getMyEvents()
+            eventDao.insertAll(apiEvents.sortedBy { it.startAt }.map { it.toEntity() })
+            apiEvents
+            // no try/catch here — let it throw so the activity can handle it
         }
     }
 

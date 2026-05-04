@@ -4,6 +4,7 @@ import com.codepalace.accelerometer.R
 import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -14,6 +15,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import coil.request.CachePolicy
@@ -28,6 +30,7 @@ import com.codepalace.accelerometer.config.ApiConfig
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.ProfileImageCache
 import com.codepalace.accelerometer.data.model.dto.EventResponse
+import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.data.repository.FavoriteRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
@@ -57,6 +60,13 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var tvEventsPreviewSubtitle: TextView
     private lateinit var profileImageCache: ProfileImageCache
     private lateinit var favoriteRepository: FavoriteRepository
+
+    private val eventRepository by lazy {
+        EventRepository(
+            api = ApiClient.eventApi,
+            database = AppDatabase.getDatabase(this)
+        )
+    }
 
     private var currentProfile: UserProfileResponse? = null
 
@@ -133,6 +143,7 @@ class ProfileActivity : AppCompatActivity() {
         showCachedProfilePicture()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun loadProfile() {
         lifecycleScope.launch {
             try {
@@ -190,21 +201,26 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun loadEventsPreview() {
         lifecycleScope.launch {
-            showEventPreviewStatus("Loading events...")
+            // 1. Cache first
+            val cached = eventRepository.getCachedMyEvents()
+            if (cached.isNotEmpty()) {
+                showEventPreview(cached.first())
+            } else {
+                showEventPreviewStatus("Loading events...")
+            }
 
+            // 2. Network refresh
             try {
-                val events = ApiClient.eventApi.getMyEvents()
-                if (events.isEmpty()) {
-                    showEventPreviewStatus("No enrolled events yet.")
-                } else {
-                    showEventPreview(events.first())
-                }
-            } catch (_: IOException) {
-                showEventPreviewStatus("Events are unavailable offline.")
-            } catch (_: Exception) {
-                showEventPreviewStatus("Could not load events.")
+                val fresh = eventRepository.refreshMyEvents()
+                if (fresh.isEmpty()) showEventPreviewStatus("No enrolled events yet.")
+                else showEventPreview(fresh.first())
+            } catch (e: IOException) {
+                if (cached.isEmpty()) showEventPreviewStatus("Events are unavailable offline.")
+            } catch (e: Exception) {
+                if (cached.isEmpty()) showEventPreviewStatus("Could not load events.")
             }
         }
     }

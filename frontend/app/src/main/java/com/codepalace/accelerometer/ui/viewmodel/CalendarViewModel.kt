@@ -91,17 +91,24 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     private fun loadEvents() {
         viewModelScope.launch {
             _isLoading.value = true
+            val dateStr = _selectedDate.value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+            // 1. Show cache immediately (offline or slow network)
+            val cached = repository.getCachedEventsByDate(dateStr)
+            if (cached.isNotEmpty()) {
+                _scheduledEvents.value = cached
+                _isLoading.value = false
+            }
+
+            // 2. Try to refresh from network
             try {
-                val dateStr = _selectedDate.value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                Log.d("CalendarViewModel", "Loading events for date: $dateStr")
-
-                val events = repository.refreshEventsByDate(dateStr)
-                Log.d("CalendarViewModel", "Loaded ${events.size} events")
-
-                _scheduledEvents.value = events
+                val fresh = repository.refreshEventsByDate(dateStr)
+                _scheduledEvents.value = fresh
             } catch (e: Exception) {
-                Log.e("CalendarViewModel", "Failed to load events", e)
-                _scheduledEvents.value = emptyList()
+                Log.e("CalendarViewModel", "Refresh failed, keeping cache", e)
+                if (_scheduledEvents.value.isEmpty()) {
+                    _scheduledEvents.value = emptyList()
+                }
             } finally {
                 _isLoading.value = false
             }

@@ -8,7 +8,15 @@ import androidx.room.Update
 @Dao
 interface ChatRoomDao {
 
-    @Query("SELECT * FROM chat_rooms WHERE userId = :userId AND isSubscribed = 1")
+    @Query("""
+        SELECT * FROM chat_rooms 
+        WHERE userId = :userId 
+          AND isSubscribed = 1 
+        ORDER BY COALESCE(
+            (SELECT MAX(createdAt) FROM chat_messages WHERE roomId = chat_rooms.id),
+            createdAt
+        ) DESC
+    """)
     suspend fun getSubscribedRooms(userId: Long): List<ChatRoomEntity>
 
     @Query("SELECT * FROM chat_rooms WHERE userId = :userId")

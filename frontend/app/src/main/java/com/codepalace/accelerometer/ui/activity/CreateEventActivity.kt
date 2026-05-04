@@ -20,7 +20,9 @@ import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.model.dto.CreateChatRoomRequest
 import com.codepalace.accelerometer.data.model.dto.CreateEventRequest
+import com.codepalace.accelerometer.data.model.enums.ChatRoomType
 import com.codepalace.accelerometer.data.model.enums.EventType
 import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.ui.MessageKind
@@ -155,17 +157,27 @@ class CreateEventActivity : AppCompatActivity() {
     }
 
     private fun createEvent() {
+        // === IMMEDIATELY DISABLE BUTTON TO PREVENT DOUBLE SUBMISSION ===
+        btnSaveEvent.isEnabled = false
+        btnSaveEvent.text = "Creating..."   // optional visual feedback
+
         // Validation
         if (etEventName.text.isBlank()) {
             etEventName.error = "Event name is required"
+            btnSaveEvent.isEnabled = true
+            btnSaveEvent.text = "Save Event"
             return
         }
         if (etDescription.text.isBlank()) {
             etDescription.error = "Description is required"
+            btnSaveEvent.isEnabled = true
+            btnSaveEvent.text = "Save Event"
             return
         }
         if (etDate.text.isBlank() || selectedStartTime == null) {
             showAppMessage("Date and start time are required", MessageKind.ERROR)
+            btnSaveEvent.isEnabled = true
+            btnSaveEvent.text = "Save Event"
             return
         }
 
@@ -176,11 +188,10 @@ class CreateEventActivity : AppCompatActivity() {
         val selectedTypeName = spinnerEventType.selectedItem.toString().replace(" ", "_")
         val eventType = EventType.valueOf(selectedTypeName)
 
-        // Build Instant strings (with Z)
+        // Build Instant strings
         val startDateTime = LocalDateTime.of(selectedDate, selectedStartTime!!)
         val localZone = java.time.ZoneId.systemDefault()
         val startAt = startDateTime.atZone(localZone).toInstant().toString()
-
         val endAt = selectedEndTime?.let {
             val endDateTime = LocalDateTime.of(selectedDate, it)
             endDateTime.atZone(localZone).toInstant().toString()
@@ -197,16 +208,42 @@ class CreateEventActivity : AppCompatActivity() {
             startAt = startAt,
             endAt = endAt,
             location = etLocation.text.toString().trim().ifBlank { null },
-            maxCapacity = etCapacity.text.toString().trim().toIntOrNull(), // renamed
-            chatRoomName = chatRoomName
+            maxCapacity = etCapacity.text.toString().trim().toIntOrNull(),
+            chatRoomName = chatRoomName   // you can remove this line if backend no longer uses it
         )
 
         lifecycleScope.launch {
             try {
                 val createdEvent = eventRepository.createEvent(request)
-                showAppMessage("Event created successfully!", MessageKind.INFO)
-                delay(1000)
+
+                var chatRoomCreated = false
+                if (chatRoomName != null && createdEvent.id != null) {
+                    try {
+                        val chatRequest = CreateChatRoomRequest(
+                            name = chatRoomName,
+                            type = ChatRoomType.EVENT,
+                            eventId = createdEvent.id
+                        )
+
+                        val createdChatRoom = ApiClient.chatApi.createRoom(chatRequest)
+                        ApiClient.chatApi.subscribeCurrentUser(createdChatRoom.id)
+
+                        chatRoomCreated = true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Chat room is optional
+                    }
+                }
+
+                if (chatRoomCreated) {
+                    showAppMessage("Event and chat room created successfully!", MessageKind.INFO)
+                } else {
+                    showAppMessage("Event created successfully!", MessageKind.INFO)
+                }
+
+                delay(1200)
                 finish()
+
             } catch (e: HttpException) {
                 showAppMessage(
                     ApiErrorMapper.fromHttpException(e, "Failed to create event"),
@@ -216,6 +253,12 @@ class CreateEventActivity : AppCompatActivity() {
                 showAppMessage("You are offline. Try again later.", MessageKind.INFO)
             } catch (e: Exception) {
                 showAppMessage("Something went wrong. Please try again.", MessageKind.ERROR)
+            } finally {
+                // Re-enable button only if something failed (success = we already finished activity)
+                if (!isFinishing) {
+                    btnSaveEvent.isEnabled = true
+                    btnSaveEvent.text = "Save Event"
+                }
             }
         }
     }

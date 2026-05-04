@@ -70,6 +70,11 @@ class ChatRoomsActivity : AppCompatActivity() {
         viewModel.loadInitialData()
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.refresh()
+    }
+
     private fun setupToolbar() {
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
@@ -88,16 +93,18 @@ class ChatRoomsActivity : AppCompatActivity() {
         rvChatRooms.adapter = adapter
         rvChatRooms.layoutManager = LinearLayoutManager(this)
     }
+
     private fun toggleSubscription(roomId: Long, isSubscribe: Boolean) {
         lifecycleScope.launch {
-            viewModel.toggleSubscription(roomId)   // already does local refresh inside
-
+            viewModel.toggleSubscription(roomId)
             if (isSubscribe) {
                 showAppMessage("Chat room added to your list", MessageKind.SUCCESS)
                 exitSearchMode()
             } else {
                 showAppMessage("You were unsubscribed from this chat room", MessageKind.SUCCESS)
             }
+            // Refresh after toggle so order updates immediately
+            viewModel.refresh()
         }
     }
 

@@ -2,6 +2,8 @@ package com.codepalace.accelerometer.api
 
 import com.codepalace.accelerometer.data.model.dto.ChatMessageResponse
 import com.codepalace.accelerometer.data.model.dto.ChatRoomResponse
+import com.codepalace.accelerometer.data.model.dto.CreateChatRoomRequest
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -22,4 +24,8 @@ interface ChatApi {
     suspend fun unsubscribeCurrentUser(@Path("roomId") roomId: Long)
 
     @GET("/api/chat/rooms/{roomId}/messages")
-    suspend fun getRoomMessages(@Path("roomId") roomId: Long): List<ChatMessageResponse>}
+    suspend fun getRoomMessages(@Path("roomId") roomId: Long): List<ChatMessageResponse>
+
+    @POST("/api/chat/rooms")
+    suspend fun createRoom(@Body request: CreateChatRoomRequest): ChatRoomResponse
+}

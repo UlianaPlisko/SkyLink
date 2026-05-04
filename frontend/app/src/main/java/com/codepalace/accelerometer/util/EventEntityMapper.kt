@@ -36,3 +36,17 @@ fun EventEntity.toDomain(): ScheduledEvent {
     )
     return eventResponse.toScheduledEvent()
 }
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun EventEntity.toEventResponse(): EventResponse = EventResponse(
+    id = id,
+    title = title,
+    description = description,
+    eventType = eventType,
+    startAt = Instant.parse(startAt),
+    endAt = endAt?.let { Instant.parse(it) },
+    creatorId = creatorId,
+    participantsCount = participantsCount,
+    participant = isParticipant,
+    maxCapacity = maxCapacity
+)

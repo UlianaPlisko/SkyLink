@@ -2,6 +2,7 @@ package com.codepalace.accelerometer.ui.activity
 
 import android.content.Intent
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
@@ -10,25 +11,40 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.R
+import com.codepalace.accelerometer.util.toEventResponse
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
+import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.local.EventEntity
 import com.codepalace.accelerometer.data.model.dto.EventResponse
+import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.util.DisplayDateFormatter
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import java.time.Instant
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Suppress("DEPRECATION")
 class MyEventsActivity : AppCompatActivity() {
 
     private lateinit var container: LinearLayout
 
+    private val repository by lazy {
+        EventRepository(
+            api = ApiClient.eventApi,
+            database = AppDatabase.getDatabase(this)
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
@@ -55,19 +71,17 @@ class MyEventsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             showLoading()
 
+            // 1. Cache first — instant, never throws
+            val cached = repository.getCachedMyEvents()
+            if (cached.isNotEmpty()) showEvents(cached)
+
+            // 2. Network refresh
             try {
-                val events = ApiClient.eventApi.getMyEvents()
-                if (events.isEmpty()) {
-                    showEmpty()
-                } else {
-                    showEvents(events)
-                }
-            } catch (e: HttpException) {
-                showError(ApiErrorMapper.fromHttpException(e, "Could not load your events."))
-            } catch (e: IOException) {
-                showError(ApiErrorMapper.fromIOException(e))
+                val fresh = repository.refreshMyEvents()
+                if (fresh.isEmpty()) showEmpty() else showEvents(fresh)
             } catch (e: Exception) {
-                showError(ApiErrorMapper.fromThrowable(e, "Could not load your events."))
+                if (cached.isEmpty()) showError("Could not load your events.")
+                // else: silently keep showing cache
             }
         }
     }

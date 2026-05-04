@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.websocket.ChatWebSocketManager
+import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.local.ChatMessageDao
+import com.codepalace.accelerometer.data.local.ChatMessageEntity
 import com.codepalace.accelerometer.data.model.dto.ChatListItem
 import com.codepalace.accelerometer.data.model.dto.ChatMessageResponse
 import com.codepalace.accelerometer.data.model.dto.MessageUi
@@ -21,7 +24,10 @@ import java.util.Locale
 private const val TAG = "ChatViewModel"
 
 @RequiresApi(Build.VERSION_CODES.O)
-class ChatViewModel(private val chatRoomId: Long) : ViewModel() {
+class ChatViewModel(
+    private val chatRoomId: Long,
+    private val chatMessageDao: ChatMessageDao   // ← injected DAO
+) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<ChatListItem>>(emptyList())
     val messages: StateFlow<List<ChatListItem>> = _messages.asStateFlow()
@@ -31,15 +37,19 @@ class ChatViewModel(private val chatRoomId: Long) : ViewModel() {
         onNewMessage = { response ->
             viewModelScope.launch {
                 val currentUserId = ApiClient.getSessionStorage().getUserId()
-
-                // 🔥 FIX: Skip our own messages (optimistic update already added them)
                 if (response.userId == currentUserId) {
                     Log.d(TAG, "Ignored own NEW_MESSAGE (optimistic already shown)")
                     return@launch
                 }
-
                 val newUiMessage = response.toMessageUi(currentUserId)
                 addMessageToList(newUiMessage)
+
+                // Also save new WebSocket message to cache
+                try {
+                    chatMessageDao.insertMessage(response.toChatMessageEntity(chatRoomId))
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to cache new WebSocket message", e)
+                }
             }
         }
     )
@@ -54,24 +64,41 @@ class ChatViewModel(private val chatRoomId: Long) : ViewModel() {
     private fun loadMessages() {
         viewModelScope.launch {
             Log.d(TAG, "📡 loadMessages() started for room $chatRoomId")
-
             val currentUserId = ApiClient.getSessionStorage().getUserId()
-            Log.d(TAG, "👤 Current user ID: $currentUserId")
 
             try {
-                Log.d(TAG, "🔄 Calling getRoomMessages($chatRoomId)...")
+                // 1. Load from cache FIRST → instant UI
+                val cachedEntities = chatMessageDao.getLast20Messages(chatRoomId)
+                if (cachedEntities.isNotEmpty()) {
+                    val uiMessages = cachedEntities.map { it.toMessageUi(currentUserId) }
+                    val grouped = groupMessagesWithDateHeaders(uiMessages)
+                    _messages.value = grouped
+                    Log.d(TAG, "✅ Showing ${cachedEntities.size} cached messages while fetching server data")
+                }
+
+                // 2. Try to get fresh data from server
+                Log.d(TAG, "🔄 Calling getRoomMessages($chatRoomId) from API...")
                 val responseList = ApiClient.chatApi.getRoomMessages(chatRoomId)
 
-                Log.d(TAG, "✅ API SUCCESS - received ${responseList.size} messages")
+                // 3. If server succeeded → replace cache + update UI
+                if (responseList.isNotEmpty()) {
+                    val entities = responseList.map { it.toChatMessageEntity(chatRoomId) }
 
-                val uiMessages = responseList.map { it.toMessageUi(currentUserId) }
-                val groupedItems = groupMessagesWithDateHeaders(uiMessages)
+                    chatMessageDao.deleteAllForRoom(chatRoomId)
+                    chatMessageDao.insertMessages(entities)
 
-                _messages.value = groupedItems
-                Log.d(TAG, "✅ Messages + date headers loaded successfully (${groupedItems.size} items)")
+                    val uiMessages = responseList.map { it.toMessageUi(currentUserId) }
+                    val groupedItems = groupMessagesWithDateHeaders(uiMessages)
+                    _messages.value = groupedItems
+
+                    Log.d(TAG, "✅ Loaded ${responseList.size} fresh messages from SERVER")
+                } else {
+                    Log.d(TAG, "Server returned 0 messages")
+                }
 
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to load messages for room $chatRoomId", e)
+                Log.e(TAG, "❌ Server unavailable — showing cached data (if any)", e)
+                // Cache was already shown above → nothing more to do
             }
         }
     }
@@ -186,6 +213,38 @@ class ChatViewModel(private val chatRoomId: Long) : ViewModel() {
             isFromCurrentUser = this.userId == currentUserId,
             senderDisplayName = senderEmail,
             createdAt = createdAt   // ← crucial for real date headers
+        )
+    }
+
+    private fun ChatMessageEntity.toMessageUi(currentUserId: Long): MessageUi {
+        val time = try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.getDefault())
+            inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val date = inputFormat.parse(createdAt) ?: java.util.Date()
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(date)
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ Failed to parse timestamp: $createdAt", e)
+            "now"
+        }
+
+        return MessageUi(
+            id = id,
+            content = content,
+            time = time,
+            isFromCurrentUser = this.userId == currentUserId,
+            senderDisplayName = senderEmail,
+            createdAt = createdAt
+        )
+    }
+
+    private fun ChatMessageResponse.toChatMessageEntity(roomId: Long): ChatMessageEntity {
+        return ChatMessageEntity(
+            id = id,
+            roomId = roomId,
+            content = content,
+            userId = userId,
+            senderEmail = senderEmail,
+            createdAt = createdAt
         )
     }
 }

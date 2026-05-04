@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         EventEntity::class,
         ChatRoomEntity::class,
         PendingChatActionEntity::class,
-        PendingEventActionEntity::class
+        PendingEventActionEntity::class,
+        ChatMessageEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,6 +35,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
 
     abstract fun chatRoomDao(): ChatRoomDao
+
+    abstract fun chatDao(): ChatMessageDao
 
     companion object {
         @Volatile
@@ -173,6 +176,24 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id INTEGER PRIMARY KEY NOT NULL,
+                roomId INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                userId INTEGER NOT NULL,
+                senderEmail TEXT NOT NULL,
+                createdAt TEXT NOT NULL
+            )
+            """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_chat_messages_roomId ON chat_messages(roomId)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -189,7 +210,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_9_10,
                         MIGRATION_10_11,
                         MIGRATION_11_12,
-                        MIGRATION_12_13
+                        MIGRATION_12_13,
+                        MIGRATION_13_14
                     )
                     .fallbackToDestructiveMigration(false)
                     .build()

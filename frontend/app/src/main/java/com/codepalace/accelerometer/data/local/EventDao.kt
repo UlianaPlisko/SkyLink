@@ -34,4 +34,7 @@ interface EventDao {
 
     @Query("SELECT * FROM events WHERE id = :eventId")
     suspend fun getEventById(eventId: Long): EventEntity?
+
+    @Query("SELECT * FROM events WHERE isParticipant = 1")
+    suspend fun getMyEvents(): List<EventEntity>
 }

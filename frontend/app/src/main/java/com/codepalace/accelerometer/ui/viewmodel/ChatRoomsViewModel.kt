@@ -68,8 +68,6 @@ class ChatRoomsViewModel(
 
         } catch (e: Exception) {
             Log.e(TAG, "Server unavailable — showing cached data", e)
-            // Keep whatever is already in _chatRooms (the cache loaded above).
-            // If the cache was empty, _chatRooms stays empty — nothing to show.
         } finally {
             _isLoading.value = false
         }
@@ -224,5 +222,9 @@ class ChatRoomsViewModel(
 
     companion object {
         private const val TAG = "ChatRoomsVM"
+    }
+
+    fun refresh() = viewModelScope.launch {
+        _chatRooms.value = chatRoomDao.getSubscribedRooms(currentUserId).map { it.toUi() }
     }
 }

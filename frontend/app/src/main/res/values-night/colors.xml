@@ -15,14 +15,14 @@
     <color name="color_card_border">#55FF6B6B</color>
 
     <!-- Sky -->
-    <color name="color_sky_background">#8C0B20</color>
-    <color name="color_sky_star">#FF000000</color>
+    <color name="color_sky_background">#1A0707</color>
+    <color name="color_sky_star">#FF0000</color>
     <color name="color_sky_bright_star">#FF000000</color>
-    <color name="color_sky_label">#E6000000</color>
+    <color name="color_sky_label">#FF0000</color>
     <color name="color_sky_guide">#66000000</color>
-    <color name="color_compass_guide">#AA000000</color>
-    <color name="color_compass_mark">#DC000000</color>
-    <color name="color_compass_text">#E6000000</color>
+    <color name="color_compass_guide">#FF0000</color>
+    <color name="color_compass_mark">#FF0000</color>
+    <color name="color_compass_text">#FF0000</color>
 
     <!-- Overlays -->
     <color name="overlay_light">#99572C2C</color>
