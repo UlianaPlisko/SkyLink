@@ -16,6 +16,8 @@ interface EventParticipantRepository : JpaRepository<EventParticipant, EventPart
     // Add this
     fun countByIdEventId(eventId: Long): Long
 
+    fun findByIdEventId(eventId: Long): List<EventParticipant>
+
     @Query("""
     SELECT ep.id.eventId
     FROM EventParticipant ep

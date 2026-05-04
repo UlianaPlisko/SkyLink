@@ -102,6 +102,13 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) {
+                showAppMessage("Enable notifications to receive event reminders.", MessageKind.INFO)
+            }
+        }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -161,6 +168,16 @@ class MainActivity : AppCompatActivity() {
                 putExtra("star_name", result.displayName)
             }
             startActivity(intent)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
 
         rvSearchResults.layoutManager = LinearLayoutManager(this)
@@ -424,6 +441,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingPermission")
     private fun fetchLocation() {
@@ -518,11 +537,13 @@ class MainActivity : AppCompatActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun applyObserverLocation(location: Location) {
         viewModel.updateObserverLocation(location.latitude, location.longitude)
         compassController.updateLocation(location)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun applyObserverLocation(latitude: Double, longitude: Double, provider: String) {
         applyObserverLocation(
             Location(provider).apply {
@@ -532,6 +553,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun useDefaultLocation(reason: String, disableAutoLocation: Boolean) {
         if (disableAutoLocation) {
             settingsStorage.useDefaultLocation()

@@ -2,6 +2,7 @@ package com.codepalace.accelerometer.ui.activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
@@ -24,11 +25,16 @@ import com.codepalace.accelerometer.ui.viewmodel.CalendarViewModel
 import com.codepalace.accelerometer.util.ScheduledEventsAdapter
 import com.codepalace.accelerometer.util.WeekDaysAdapter
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
 class CalendarActivity : AppCompatActivity() {
 
     private val viewModel: CalendarViewModel by viewModels()
+
+    // ← NEW: for deep link from notification
+    private var pendingEventId: Long? = null
+    private var pendingEventDate: LocalDate? = null
 
     private lateinit var btnBack: ImageButton
     private lateinit var tvCurrentDate: TextView
@@ -38,11 +44,8 @@ class CalendarActivity : AppCompatActivity() {
     private lateinit var rvWeekDays: RecyclerView
     private lateinit var tvScheduledTitle: TextView
     private lateinit var rvScheduledEvents: RecyclerView
-
     private lateinit var tvEmpty: TextView
-
     private lateinit var progressBar: View
-
     private lateinit var btnCreateEvent: Button
 
     private lateinit var weekDaysAdapter: WeekDaysAdapter
@@ -61,7 +64,7 @@ class CalendarActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_calendar)
 
-        // Initialize views
+        // Initialize views (your original code)
         btnBack = findViewById(R.id.btnBack)
         tvCurrentDate = findViewById(R.id.tvCurrentDate)
         tvDateLabel = findViewById(R.id.tvDateLabel)
@@ -74,86 +77,73 @@ class CalendarActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         btnCreateEvent = findViewById(R.id.btnCreateEvent)
 
-        // Setup adapters
-        weekDaysAdapter = WeekDaysAdapter { selectedDate ->
-            viewModel.selectDate(selectedDate)
-        }
-
-        scheduledEventsAdapter = ScheduledEventsAdapter { event ->
-            handleEnroll(event)
-        }
+        // Setup adapters (your original code)
+        weekDaysAdapter = WeekDaysAdapter { selectedDate -> viewModel.selectDate(selectedDate) }
+        scheduledEventsAdapter = ScheduledEventsAdapter { event -> handleEnroll(event) }
 
         rvWeekDays.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvWeekDays.adapter = weekDaysAdapter
-
         rvScheduledEvents.layoutManager = LinearLayoutManager(this)
         rvScheduledEvents.adapter = scheduledEventsAdapter
 
-        // Set window insets padding
+        // Window insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        // Back button
-        btnBack.setOnClickListener {
-            finish()
-        }
-
-        // Previous week button
-        btnPrevWeek.setOnClickListener {
-            viewModel.previousWeek()
-        }
-
-        // Next week button
-        btnNextWeek.setOnClickListener {
-            viewModel.nextWeek()
-        }
+        // Buttons (your original code)
+        btnBack.setOnClickListener { finish() }
+        btnPrevWeek.setOnClickListener { viewModel.previousWeek() }
+        btnNextWeek.setOnClickListener { viewModel.nextWeek() }
 
         val role = ApiClient.getSessionStorage().getRole()
         btnCreateEvent.visibility = if (role == "CONTRIBUTOR") View.VISIBLE else View.GONE
-
         btnCreateEvent.setOnClickListener {
             startActivity(Intent(this, CreateEventActivity::class.java))
         }
 
-        // Observe ViewModel states
+        // ← NEW: Handle deep link from notification
+        handleDeepLinkIntent(intent)
+
+        // Your original observers...
         lifecycleScope.launch {
             viewModel.selectedDate.collect { selectedDate ->
-
-                val today = java.time.LocalDate.now()
-
-                tvDateLabel.text =
-                    if (selectedDate == today) "Today"
-                    else selectedDate.dayOfWeek.name.lowercase()
-                        .replaceFirstChar { it.uppercase() }
-
+                val today = LocalDate.now()
+                tvDateLabel.text = if (selectedDate == today) "Today" else selectedDate.dayOfWeek.name.lowercase()
+                    .replaceFirstChar { it.uppercase() }
                 tvScheduledTitle.text = "Scheduled for ${formatMonthDay(selectedDate)}"
             }
         }
 
         lifecycleScope.launch {
-            viewModel.weekDays.collect { days ->
-                weekDaysAdapter.submitList(days)
-            }
+            viewModel.weekDays.collect { days -> weekDaysAdapter.submitList(days) }
         }
 
         lifecycleScope.launch {
             viewModel.scheduledEvents.collect { events ->
                 scheduledEventsAdapter.submitList(events)
+
+                // ← NEW: Auto-scroll to the event from notification
+                pendingEventId?.let { id ->
+                    val position = events.indexOfFirst { it.id.toLong() == id }
+                    if (position != -1) {
+                        rvScheduledEvents.scrollToPosition(position)
+                        pendingEventId = null
+                    }
+                }
+
                 val isLoading = viewModel.isLoading.value
                 tvEmpty.visibility = if (events.isEmpty() && !isLoading) View.VISIBLE else View.GONE
             }
         }
 
-        // Observe loading state
+        // loading observer (your original)
         lifecycleScope.launch {
             viewModel.isLoading.collect { isLoading ->
                 progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-
                 if (!isLoading) {
-                    // When loading finishes → immediately check if we should show "No events"
                     val events = viewModel.scheduledEvents.value
                     tvEmpty.visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
                 } else {
@@ -169,12 +159,42 @@ class CalendarActivity : AppCompatActivity() {
         }
     }
 
-    private fun formatDisplayDate(date: java.time.LocalDate): String {
+    // ← NEW: Handle notification deep link
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLinkIntent(intent)
+    }
+
+    private fun handleDeepLinkIntent(intent: Intent) {
+        // FCM delivers data payload as intent extras when clickAction is set
+        val eventIdStr = intent.getStringExtra("event_id")
+        val eventDateStr = intent.getStringExtra("event_date")
+
+        Log.d("CalendarActivity", "handleDeepLinkIntent: event_id=$eventIdStr, event_date=$eventDateStr")
+
+        if (eventDateStr != null) {
+            try {
+                pendingEventDate = LocalDate.parse(eventDateStr)
+                viewModel.selectDate(pendingEventDate!!)
+                Log.d("CalendarActivity", "Deep link → opened date: $pendingEventDate")
+            } catch (e: Exception) {
+                Log.e("CalendarActivity", "Invalid event_date format", e)
+            }
+        }
+
+        if (eventIdStr != null) {
+            pendingEventId = eventIdStr.toLongOrNull()
+        }
+    }
+
+    // your original helper functions
+    private fun formatDisplayDate(date: LocalDate): String {
         val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM dd, yyyy")
         return date.format(formatter)
     }
 
-    private fun formatMonthDay(date: java.time.LocalDate): String {
+    private fun formatMonthDay(date: LocalDate): String {
         val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM d")
         return date.format(formatter)
     }
@@ -184,31 +204,15 @@ class CalendarActivity : AppCompatActivity() {
             try {
                 if (event.isEnrolled) {
                     viewModel.signOut(event.id.toLong())
-
-                    showAppMessage(
-                        "You have signed out.",
-                        MessageKind.SUCCESS
-                    )
+                    showAppMessage("You have signed out.", MessageKind.SUCCESS)
                 } else {
                     viewModel.enroll(event.id.toLong())
-
-                    showAppMessage(
-                        "Successfully enrolled.",
-                        MessageKind.SUCCESS
-                    )
+                    showAppMessage("Successfully enrolled.", MessageKind.SUCCESS)
                 }
-
             } catch (e: retrofit2.HttpException) {
-                showAppMessage(
-                    "Action failed. Please try again.",
-                    MessageKind.ERROR
-                )
-
+                showAppMessage("Action failed. Please try again.", MessageKind.ERROR)
             } catch (e: java.io.IOException) {
-                showAppMessage(
-                    "You are offline. Try again later.",
-                    MessageKind.INFO
-                )
+                showAppMessage("You are offline. Try again later.", MessageKind.INFO)
             }
         }
     }

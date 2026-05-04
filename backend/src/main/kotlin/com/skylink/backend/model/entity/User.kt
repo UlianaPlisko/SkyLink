@@ -43,4 +43,7 @@ data class User(
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     var localCredential: UserCredentials? = null,
 
+    @Column(name = "fcm_token", length = 512)
+    var fcmToken: String? = null
+
 )

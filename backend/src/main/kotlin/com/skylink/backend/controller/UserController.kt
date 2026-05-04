@@ -1,6 +1,7 @@
 package com.skylink.backend.controller
 
 import com.skylink.backend.dto.user.ChangePasswordRequest
+import com.skylink.backend.dto.user.FcmTokenRequest
 import com.skylink.backend.dto.user.UpdateProfileRequest
 import com.skylink.backend.dto.user.UserProfileResponse
 import com.skylink.backend.service.user.UserProfileService
@@ -12,6 +13,7 @@ import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.security.Principal
@@ -83,5 +85,15 @@ class UserController(
         } else {
             ResponseEntity.notFound().build()
         }
+    }
+
+    @Operation(summary = "Register/update FCM token for push notifications")
+    @PostMapping("/fcm-token")
+    @ResponseStatus(HttpStatus.OK)
+    fun registerFcmToken(
+        @Valid @RequestBody request: FcmTokenRequest,
+        principal: Principal
+    ) {
+        profileService.registerFcmToken(principal.name, request.fcmToken)
     }
 }

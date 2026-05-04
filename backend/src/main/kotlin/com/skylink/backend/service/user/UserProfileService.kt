@@ -132,6 +132,18 @@ class UserProfileService(
         return true
     }
 
+    @Transactional
+    fun registerFcmToken(userEmail: String, fcmToken: String) {
+        if (userEmail == "anonymousUser") {
+            return
+        }
+
+        val user = getByEmail(userEmail)
+        user.fcmToken = fcmToken
+        userRepository.save(user)
+
+        }
+
     private fun toUserProfileResponse(user: User): UserProfileResponse {
         val pfpExists = userPfpRepository.existsById(user.id)
 

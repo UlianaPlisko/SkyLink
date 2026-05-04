@@ -178,11 +178,12 @@ class CreateEventActivity : AppCompatActivity() {
 
         // Build Instant strings (with Z)
         val startDateTime = LocalDateTime.of(selectedDate, selectedStartTime!!)
-        val startAt = startDateTime.atOffset(ZoneOffset.UTC).toInstant().toString()
+        val localZone = java.time.ZoneId.systemDefault()
+        val startAt = startDateTime.atZone(localZone).toInstant().toString()
 
         val endAt = selectedEndTime?.let {
             val endDateTime = LocalDateTime.of(selectedDate, it)
-            endDateTime.atOffset(ZoneOffset.UTC).toInstant().toString()
+            endDateTime.atZone(localZone).toInstant().toString()
         }
 
         val chatRoomName = if (switchChatRoom.isChecked) {

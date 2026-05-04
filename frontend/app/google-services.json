@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526827334297",
+    "project_id": "skylink-2b511",
+    "storage_bucket": "skylink-2b511.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526827334297:android:7b373481beba3e6a06a608",
+        "android_client_info": {
+          "package_name": "com.codepalace.accelerometer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2hcYylXfg2QYmGnS-coFOK6hPgrmBD6A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

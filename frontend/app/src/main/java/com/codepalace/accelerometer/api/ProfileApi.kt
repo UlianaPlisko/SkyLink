@@ -3,6 +3,7 @@ package com.codepalace.accelerometer.api
 import com.codepalace.accelerometer.api.dto.ChangePasswordRequest
 import com.codepalace.accelerometer.api.dto.UpdateProfileRequest
 import com.codepalace.accelerometer.api.dto.UserProfileResponse
+import com.codepalace.accelerometer.data.model.dto.FcmTokenRequest
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -26,4 +27,7 @@ interface ProfileApi {
     @Multipart
     @POST("api/profile/pfp")
     suspend fun uploadProfilePicture(@Part file: MultipartBody.Part): Response<Unit>
+
+    @POST("api/profile/fcm-token")
+    suspend fun registerFcmToken(@Body request: FcmTokenRequest): Response<Unit>
 }

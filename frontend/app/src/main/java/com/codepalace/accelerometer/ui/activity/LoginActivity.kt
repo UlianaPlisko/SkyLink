@@ -1,11 +1,14 @@
 package com.codepalace.accelerometer.ui.activity
 
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.codepalace.accelerometer.R
@@ -13,6 +16,8 @@ import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.auth.GoogleSignInCoordinator
 import com.codepalace.accelerometer.data.repository.AuthRepository
+import com.codepalace.accelerometer.notification.MyFirebaseMessagingService
+import com.codepalace.accelerometer.notification.MyFirebaseMessagingService.Companion.sendSavedTokenIfExists
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import kotlinx.coroutines.launch
@@ -24,6 +29,7 @@ class LoginActivity : AppCompatActivity() {
     private val authRepository = AuthRepository()
     private lateinit var googleSignInCoordinator: GoogleSignInCoordinator
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
@@ -61,6 +67,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun doLogin(email: String, password: String) {
         lifecycleScope.launch {
             try {
@@ -73,6 +80,8 @@ class LoginActivity : AppCompatActivity() {
                     userId = response.userId,
                     provider = "LOCAL"
                 )
+
+                sendSavedTokenIfExists(this@LoginActivity)
 
                 showAppMessage("Welcome back, ${response.displayName}.", MessageKind.SUCCESS)
                 startActivity(Intent(this@LoginActivity, MainActivity::class.java))

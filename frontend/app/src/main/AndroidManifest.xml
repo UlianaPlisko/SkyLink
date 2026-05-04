@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".SkylinkApplication"
@@ -24,8 +25,16 @@
         <activity android:name=".ui.activity.MenuActivity" />
         <activity android:name=".ui.activity.ProfileActivity" />
         <activity android:name=".ui.activity.SettingsActivity" />
-        <activity android:name=".ui.activity.CalendarActivity"
-            tools:targetApi="26" />
+        <activity
+            android:name=".ui.activity.CalendarActivity"
+            tools:targetApi="26"
+            android:launchMode="singleTop"
+            android:exported="true">         <!-- ← add exported -->
+            <intent-filter>
+                <action android:name="OPEN_CALENDAR" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".ui.activity.AccountSettingsActivity" />
         <activity android:name=".ui.activity.LocationSettingsActivity" />
         <activity android:name=".ui.activity.GoogleCompleteActivity" />
@@ -57,6 +66,14 @@
             </intent-filter>
 
         </activity>
+
+        <service
+            android:name=".notification.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
     </application>
 
