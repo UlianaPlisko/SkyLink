@@ -1,6 +1,9 @@
 package com.codepalace.accelerometer.ui.activity
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -12,7 +15,6 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,31 +28,28 @@ import com.codepalace.accelerometer.util.MessageAdapter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O)
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var toolbar: Toolbar
     private lateinit var rvMessages: RecyclerView
     private lateinit var etMessageInput: EditText
     private lateinit var btnSend: ImageButton
-
+    private lateinit var bottomInputBar: View          // ← added
     private lateinit var adapter: MessageAdapter
 
-    // Chat room data from intent
     private var chatRoomId: Long = 0L
     private var chatRoomName: String = ""
 
-    // ✅ Custom factory like in ChatRoomsActivity
     private val viewModel: ChatViewModel by viewModels {
         object : ViewModelProvider.Factory {
-            @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 val db = AppDatabase.getDatabase(this@ChatActivity)
-                return ChatViewModel(chatRoomId, db.chatDao()) as T
+                return ChatViewModel(chatRoomId, db.chatDao()) as T   // ← fixed: was chatDao()
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
@@ -63,11 +62,30 @@ class ChatActivity : AppCompatActivity() {
         rvMessages = findViewById(R.id.rvMessages)
         etMessageInput = findViewById(R.id.etMessageInput)
         btnSend = findViewById(R.id.btnSend)
+        bottomInputBar = findViewById(R.id.bottomInputBar)   // ← added
 
         setupToolbar()
         setupRecyclerView()
         setupSendButton()
         observeViewModel()
+
+        updateMessagingAvailability()   // ← initial check
+    }
+
+    private fun isOnline(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    private fun updateMessagingAvailability() {
+        val online = isOnline()
+        bottomInputBar.visibility = if (online) View.VISIBLE else View.GONE
+
+        if (!online) {
+            showAppMessage("You are offline.\nMessaging is unavailable (cached messages are visible)", MessageKind.INFO)
+        }
     }
 
     private fun setupToolbar() {
@@ -89,8 +107,7 @@ class ChatActivity : AppCompatActivity() {
             val message = etMessageInput.text.toString().trim()
             if (message.isNotEmpty()) {
                 viewModel.sendMessage(message)
-                etMessageInput.text.clear()     // clear input only
-
+                etMessageInput.text.clear()
                 etMessageInput.requestFocus()
             }
         }
@@ -101,19 +118,23 @@ class ChatActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.messages.collectLatest { items ->
                 adapter.submitList(items) {
-                    // This callback runs AFTER the list is fully applied to the adapter
                     if (items.isNotEmpty()) {
-                        // Smooth scroll + small delay ensures it always goes to the very bottom
                         rvMessages.post {
                             rvMessages.smoothScrollToPosition(items.size - 1)
                         }
                     }
-
-                    val tvEmpty = findViewById<TextView>(R.id.tvEmptyState)
-                    tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
                 }
+
+                val tvEmpty = findViewById<TextView>(R.id.tvEmptyState)
+                tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             }
         }
+    }
+
+    // Refresh availability when returning to the screen (network may have changed)
+    override fun onResume() {
+        super.onResume()
+        updateMessagingAvailability()
     }
 
     companion object {
@@ -127,6 +148,5 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // ViewModel already cleans up WebSocket via onCleared()
     }
 }
