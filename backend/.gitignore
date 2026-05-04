@@ -42,3 +42,5 @@ out/
 # Local environment files with secrets
 application-local.yml
 
+serviceAccountKey.json
+
