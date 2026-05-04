@@ -212,8 +212,8 @@ class StarDetailActivity : AppCompatActivity() {
 
     fun resolveUrl(path: String?): String? {
         if (path == null) return null
-        return if (path.startsWith("http")) path
-        else "${ApiConfig.BASE_URL}$path"
+        return if (path.startsWith("http", ignoreCase = true)) path
+        else ApiConfig.BASE_URL.trimEnd('/') + "/" + path.trimStart('/')
     }
 
     private fun showSpaceObjectImage(spaceObjectId: Long, rawImageUrl: String?) {
@@ -221,11 +221,13 @@ class StarDetailActivity : AppCompatActivity() {
             setImageLoadingVisible(false)
             ivStarImage.load(cachedImage) {
                 crossfade(true)
+                placeholder(R.drawable.space_object_placeholder)
+                error(R.drawable.space_object_placeholder)
                 listener(
                     onSuccess = { _, _ -> setImageLoadingVisible(false) },
                     onError = { _, _ ->
-                        setImageLoadingVisible(false)
-                        ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+                        spaceObjectImageCache.deleteImage(spaceObjectId)
+                        showImagePlaceholder()
                     }
                 )
             }
@@ -234,8 +236,7 @@ class StarDetailActivity : AppCompatActivity() {
 
         val imageUrl = resolveUrl(rawImageUrl)
         if (imageUrl.isNullOrBlank()) {
-            setImageLoadingVisible(false)
-            ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+            showImagePlaceholder()
             return
         }
 
@@ -244,6 +245,9 @@ class StarDetailActivity : AppCompatActivity() {
 
         ivStarImage.load(imageUrl) {
             crossfade(true)
+            placeholder(R.drawable.space_object_placeholder)
+            error(R.drawable.space_object_placeholder)
+            fallback(R.drawable.space_object_placeholder)
             diskCachePolicy(CachePolicy.ENABLED)
             memoryCachePolicy(CachePolicy.ENABLED)
 
@@ -255,8 +259,7 @@ class StarDetailActivity : AppCompatActivity() {
                     setImageLoadingVisible(false)
                 },
                 onError = { _, _ ->
-                    setImageLoadingVisible(false)
-                    ivStarImage.setImageResource(R.drawable.space_object_placeholder)
+                    showImagePlaceholder()
                 }
             )
         }
@@ -270,6 +273,11 @@ class StarDetailActivity : AppCompatActivity() {
         val visibility = if (visible) View.VISIBLE else View.GONE
         pbImageLoading.visibility = visibility
         ivImageLoadingLogo.visibility = visibility
+    }
+
+    private fun showImagePlaceholder() {
+        setImageLoadingVisible(false)
+        ivStarImage.setImageResource(R.drawable.space_object_placeholder)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

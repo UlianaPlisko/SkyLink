@@ -18,6 +18,12 @@ class SpaceObjectImageCache(context: Context) {
         return file.takeIf { it.exists() && it.length() > 0L }
     }
 
+    fun deleteImage(spaceObjectId: Long) {
+        runCatching {
+            imageFile(spaceObjectId).delete()
+        }
+    }
+
     suspend fun downloadAndSave(spaceObjectId: Long, imageUrl: String): File? {
         return withContext(Dispatchers.IO) {
             runCatching {
@@ -30,14 +36,27 @@ class SpaceObjectImageCache(context: Context) {
                     .build()
 
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withContext null
+                    val body = response.body ?: return@withContext null
+                    val contentType = body.contentType()
+                    if (!response.isSuccessful ||
+                        (contentType != null && !contentType.type.equals("image", ignoreCase = true))
+                    ) {
+                        return@withContext null
+                    }
 
-                    val bytes = response.body?.bytes()?.takeIf { it.isNotEmpty() }
+                    val bytes = body.bytes().takeIf { it.isNotEmpty() }
                         ?: return@withContext null
 
-                    imageFile(spaceObjectId).also { file ->
+                    val file = imageFile(spaceObjectId)
+                    val tempFile = File(directory, "${file.name}.tmp")
+                    tempFile.writeBytes(bytes)
+
+                    if (!tempFile.renameTo(file)) {
                         file.writeBytes(bytes)
+                        tempFile.delete()
                     }
+
+                    file
                 }
             }.getOrNull()
         }
@@ -48,7 +67,7 @@ class SpaceObjectImageCache(context: Context) {
     }
 
     private fun absoluteUrl(path: String): String {
-        return if (path.startsWith("http")) {
+        return if (path.startsWith("http", ignoreCase = true)) {
             path
         } else {
             ApiConfig.BASE_URL.trimEnd('/') + "/" + path.trimStart('/')

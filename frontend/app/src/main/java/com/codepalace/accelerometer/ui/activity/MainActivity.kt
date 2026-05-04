@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
@@ -82,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvPreviewType: TextView
 
     private var selectedStar: Star? = null
+    private var locationFallbackMessageShown = false
 
     private val timeHandler = Handler(Looper.getMainLooper())
 
@@ -104,13 +104,16 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val locationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) {
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+            if (granted || hasLocationPermission()) {
                 fetchLocation()
             } else {
-                showAppMessage(
-                    "Allow location access or enter coordinates manually in settings.",
-                    MessageKind.INFO
+                useDefaultLocation(
+                    reason = "Location access was denied.",
+                    disableAutoLocation = true
                 )
             }
         }
@@ -398,73 +401,159 @@ class MainActivity : AppCompatActivity() {
             val longitude = settingsStorage.manualLongitude()
 
             if (latitude != null && longitude != null) {
-                viewModel.updateObserverLocation(latitude, longitude)
-                compassController.updateLocation(
-                    Location("manual").apply {
-                        this.latitude = latitude
-                        this.longitude = longitude
-                    }
-                )
+                applyObserverLocation(latitude, longitude, "manual")
                 return
             }
 
-            showAppMessage(
-                "Enter manual latitude and longitude in location settings.",
-                MessageKind.INFO
+            useDefaultLocation(
+                reason = "Saved coordinates were missing or invalid.",
+                disableAutoLocation = true
             )
             return
         }
 
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                fetchLocation()
-            }
-
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-
-            else -> {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
+        if (hasLocationPermission()) {
+            fetchLocation()
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingPermission")
     private fun fetchLocation() {
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location ->
-                if (location != null) {
-                    viewModel.updateObserverLocation(location.latitude, location.longitude)
-                    compassController.updateLocation(location)
-                } else {
+        if (!hasLocationPermission()) {
+            useDefaultLocation(
+                reason = "Location permission is unavailable.",
+                disableAutoLocation = true
+            )
+            return
+        }
+
+        try {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location ->
+                    if (location != null) {
+                        applyObserverLocation(location)
+                    } else {
+                        requestFreshLocation()
+                    }
+                }
+                .addOnFailureListener {
                     requestFreshLocation()
                 }
-            }
-            .addOnFailureListener {
-                requestFreshLocation()
-            }
+        } catch (_: SecurityException) {
+            useDefaultLocation(
+                reason = "Location permission is unavailable.",
+                disableAutoLocation = true
+            )
+        } catch (_: Exception) {
+            useDefaultLocation(
+                reason = "Current location is unavailable.",
+                disableAutoLocation = false
+            )
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("MissingPermission")
     private fun requestFreshLocation() {
+        if (!hasLocationPermission()) {
+            useDefaultLocation(
+                reason = "Location permission is unavailable.",
+                disableAutoLocation = true
+            )
+            return
+        }
+
         val request = CurrentLocationRequest.Builder()
             .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
             .build()
 
-        fusedLocationClient
-            .getCurrentLocation(request, null)
-            .addOnSuccessListener { location ->
-                if (location != null) {
-                    viewModel.updateObserverLocation(location.latitude, location.longitude)
-                    compassController.updateLocation(location)
+        try {
+            fusedLocationClient
+                .getCurrentLocation(request, null)
+                .addOnSuccessListener { location ->
+                    if (location != null) {
+                        applyObserverLocation(location)
+                    } else {
+                        useDefaultLocation(
+                            reason = "Current location is unavailable.",
+                            disableAutoLocation = false
+                        )
+                    }
                 }
+                .addOnFailureListener {
+                    useDefaultLocation(
+                        reason = "Current location is unavailable.",
+                        disableAutoLocation = false
+                    )
+                }
+        } catch (_: SecurityException) {
+            useDefaultLocation(
+                reason = "Location permission is unavailable.",
+                disableAutoLocation = true
+            )
+        } catch (_: Exception) {
+            useDefaultLocation(
+                reason = "Current location is unavailable.",
+                disableAutoLocation = false
+            )
+        }
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun applyObserverLocation(location: Location) {
+        viewModel.updateObserverLocation(location.latitude, location.longitude)
+        compassController.updateLocation(location)
+    }
+
+    private fun applyObserverLocation(latitude: Double, longitude: Double, provider: String) {
+        applyObserverLocation(
+            Location(provider).apply {
+                this.latitude = latitude
+                this.longitude = longitude
             }
+        )
+    }
+
+    private fun useDefaultLocation(reason: String, disableAutoLocation: Boolean) {
+        if (disableAutoLocation) {
+            settingsStorage.useDefaultLocation()
+        }
+
+        applyObserverLocation(
+            AppSettingsStorage.DEFAULT_LATITUDE,
+            AppSettingsStorage.DEFAULT_LONGITUDE,
+            AppSettingsStorage.DEFAULT_LOCATION_NAME
+        )
+
+        if (locationFallbackMessageShown) return
+        locationFallbackMessageShown = true
+
+        showAppMessage(
+            "$reason Using ${AppSettingsStorage.DEFAULT_LOCATION_NAME} coordinates " +
+                    "(${AppSettingsStorage.DEFAULT_LATITUDE_TEXT}, ${AppSettingsStorage.DEFAULT_LONGITUDE_TEXT}). " +
+                    "Grant location permission later and enable Auto location, or enter your own coordinates.",
+            MessageKind.INFO,
+            actionLabel = "Settings",
+            action = { startActivity(Intent(this, LocationSettingsActivity::class.java)) }
+        )
     }
 
     private fun updateCurrentTime() {

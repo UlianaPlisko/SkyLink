@@ -64,18 +64,17 @@ class LocationSettingsActivity : AppCompatActivity() {
         val autoLocation = switchAutoLocation.isChecked
         val latitude = etLatitude.text.toString().trim()
         val longitude = etLongitude.text.toString().trim()
+        val latValue = AppSettingsStorage.parseLatitude(latitude)
+        val lonValue = AppSettingsStorage.parseLongitude(longitude)
 
         if (!autoLocation) {
-            val latValue = latitude.toDoubleOrNull()
-            val lonValue = longitude.toDoubleOrNull()
-
             when {
-                latValue == null || latValue !in -90.0..90.0 -> {
+                latValue == null -> {
                     etLatitude.error = "Latitude must be from -90 to 90"
                     return
                 }
 
-                lonValue == null || lonValue !in -180.0..180.0 -> {
+                lonValue == null -> {
                     etLongitude.error = "Longitude must be from -180 to 180"
                     return
                 }
@@ -83,10 +82,17 @@ class LocationSettingsActivity : AppCompatActivity() {
         }
 
         settingsStorage.autoLocationEnabled = autoLocation
-        settingsStorage.latitude = latitude
-        settingsStorage.longitude = longitude
+        settingsStorage.latitude = latValue?.toString() ?: AppSettingsStorage.DEFAULT_LATITUDE_TEXT
+        settingsStorage.longitude = lonValue?.toString() ?: AppSettingsStorage.DEFAULT_LONGITUDE_TEXT
 //        settingsStorage.cityName = etCityName.text.toString().trim()
 
-        showAppMessage("Location settings saved.", MessageKind.SUCCESS)
+        showAppMessage(
+            if (autoLocation) {
+                "Location settings saved. Auto location will be used after permission is granted."
+            } else {
+                "Location settings saved."
+            },
+            MessageKind.SUCCESS
+        )
     }
 }

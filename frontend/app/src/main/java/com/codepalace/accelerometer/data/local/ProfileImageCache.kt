@@ -24,8 +24,16 @@ class ProfileImageCache(context: Context) {
     }
 
     fun saveProfilePicture(userId: Long, uri: Uri): File? {
-        val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        val bytes = runCatching {
+            appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        }.getOrNull()
         return bytes?.takeIf { it.isNotEmpty() }?.let { saveProfilePicture(userId, it) }
+    }
+
+    fun deleteProfilePicture(userId: Long) {
+        runCatching {
+            profilePictureFile(userId).delete()
+        }
     }
 
     private fun profilePictureFile(userId: Long): File {

@@ -32,6 +32,7 @@ import com.codepalace.accelerometer.data.repository.FavoriteRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.util.DisplayDateFormatter
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -258,7 +259,11 @@ class ProfileActivity : AppCompatActivity() {
                 memoryCachePolicy(CachePolicy.ENABLED)
                 listener(
                     onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
-                    onError = { _, _ -> showCachedProfilePicture() }
+                    onError = { _, _ ->
+                        if (!showCachedProfilePicture()) {
+                            avatarInitial.visibility = View.VISIBLE
+                        }
+                    }
                 )
             }
         }
@@ -326,7 +331,13 @@ class ProfileActivity : AppCompatActivity() {
     private fun uploadProfilePicture(uri: Uri) {
         lifecycleScope.launch {
             try {
-                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                val selectedMimeType = contentResolver.getType(uri)
+                if (selectedMimeType != null && !selectedMimeType.startsWith("image/")) {
+                    showAppMessage("Choose an image file before uploading.", MessageKind.ERROR)
+                    return@launch
+                }
+
+                val mimeType = selectedMimeType ?: "image/jpeg"
                 val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
 
                 if (bytes == null || bytes.isEmpty()) {
@@ -359,6 +370,17 @@ class ProfileActivity : AppCompatActivity() {
                     "You are offline. Profile picture can be changed when internet is back.",
                     MessageKind.INFO
                 )
+            } catch (_: SecurityException) {
+                showAppMessage(
+                    "Could not read the selected image. Choose another image.",
+                    MessageKind.ERROR
+                )
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                showAppMessage(
+                    "Could not upload profile picture. Try another image.",
+                    MessageKind.ERROR
+                )
             }
         }
     }
@@ -381,7 +403,10 @@ class ProfileActivity : AppCompatActivity() {
             transformations(CircleCropTransformation())
             listener(
                 onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
-                onError = { _, _ -> avatarInitial.visibility = View.VISIBLE }
+                onError = { _, _ ->
+                    profileImageCache.deleteProfilePicture(userId)
+                    avatarInitial.visibility = View.VISIBLE
+                }
             )
         }
 
@@ -395,7 +420,10 @@ class ProfileActivity : AppCompatActivity() {
                 transformations(CircleCropTransformation())
                 listener(
                     onSuccess = { _, _ -> avatarInitial.visibility = View.GONE },
-                    onError = { _, _ -> avatarInitial.visibility = View.VISIBLE }
+                    onError = { _, _ ->
+                        profileImageCache.deleteProfilePicture(userId)
+                        avatarInitial.visibility = View.VISIBLE
+                    }
                 )
             }
         }
@@ -416,8 +444,12 @@ class ProfileActivity : AppCompatActivity() {
                     .build()
 
                 OkHttpClient().newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        response.body?.bytes()?.takeIf { it.isNotEmpty() }?.let { bytes ->
+                    val body = response.body
+                    val contentType = body.contentType()
+                    if (response.isSuccessful &&
+                        (contentType == null || contentType.type.equals("image", ignoreCase = true))
+                    ) {
+                        body.bytes().takeIf { it.isNotEmpty() }?.let { bytes ->
                             profileImageCache.saveProfilePicture(userId, bytes)
                         }
                     }
@@ -427,7 +459,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun absoluteUrl(path: String): String {
-        return if (path.startsWith("http")) {
+        return if (path.startsWith("http", ignoreCase = true)) {
             path
         } else {
             ApiConfig.BASE_URL.trimEnd('/') + "/" + path.trimStart('/')

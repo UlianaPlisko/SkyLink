@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.local.SpaceObjectEntity
 import com.codepalace.accelerometer.data.model.Star
 import com.codepalace.accelerometer.data.repository.CelestialRepository
@@ -38,8 +39,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private var currentLat = 51.5
-    private var currentLon = -0.1
+    private var currentLat = AppSettingsStorage.DEFAULT_LATITUDE
+    private var currentLon = AppSettingsStorage.DEFAULT_LONGITUDE
     private var displayMaxMagnitude = 3.0
 
     private var currentZoomLevel: Float = 1.0f          // 1.0 = default (90° FOV)
