@@ -193,11 +193,11 @@ class CreateEventActivity : AppCompatActivity() {
         val request = CreateEventRequest(
             title = title,
             description = description,
-            eventType = eventType,           // ← now sent!
+            eventType = eventType,
             startAt = startAt,
             endAt = endAt,
             location = etLocation.text.toString().trim().ifBlank { null },
-            capacity = etCapacity.text.toString().trim().toIntOrNull(),
+            maxCapacity = etCapacity.text.toString().trim().toIntOrNull(), // renamed
             chatRoomName = chatRoomName
         )
 

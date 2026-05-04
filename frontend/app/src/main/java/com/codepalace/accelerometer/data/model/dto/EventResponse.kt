@@ -11,5 +11,6 @@ data class EventResponse(
     val endAt: Instant?,
     val creatorId: Long,
     val participantsCount: Int,
-    val participant: Boolean
+    val participant: Boolean,      // ← Must be this name
+    val maxCapacity: Int?           // ← added (new field from backend)
 )

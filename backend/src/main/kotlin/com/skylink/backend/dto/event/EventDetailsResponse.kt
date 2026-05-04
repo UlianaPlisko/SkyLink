@@ -12,5 +12,6 @@ data class EventDetailsResponse(
     val endAt: Instant?,
     val creatorId: Long,
     val participantsCount: Int,
-    val isParticipant: Boolean
+    val isParticipant: Boolean,
+    val maxCapacity: Int?
 )

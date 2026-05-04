@@ -59,11 +59,11 @@ class ScheduledEventsAdapter(
             labelEnd.visibility = if (hasEndTime) View.VISIBLE else View.GONE
             tvEndTime.visibility = if (hasEndTime) View.VISIBLE else View.GONE
 
-            // Capacity (hide both label and value if null/empty or "0")
-            tvCapacity.text = event.capacity
-            val hasCapacity = !event.capacity.isNullOrBlank() && event.capacity != "0"
-            labelCapacity.visibility = if (hasCapacity) View.VISIBLE else View.GONE
-            tvCapacity.visibility = if (hasCapacity) View.VISIBLE else View.GONE
+            // Capacity
+            val capacityText = event.capacityDisplay   // e.g. "3/20" or null if unlimited
+            labelCapacity.visibility = if (capacityText != null) View.VISIBLE else View.GONE
+            tvCapacity.visibility    = if (capacityText != null) View.VISIBLE else View.GONE
+            tvCapacity.text          = capacityText
 
             // Enroll button
             if (event.isEnrolled) {

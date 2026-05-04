@@ -51,5 +51,8 @@ data class Event(
     var metadata: String = "{}",
 
     @Column(name = "chat_room_id")
-    var chatRoomId: Long? = null
+    var chatRoomId: Long? = null,
+
+    @Column(name = "max_capacity")
+    var maxCapacity: Int? = null
 )

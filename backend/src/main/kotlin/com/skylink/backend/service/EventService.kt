@@ -47,7 +47,8 @@ class EventService(
             creatorId = user.id,
             source = EventSource.USER,
             metadata = "{}",
-            chatRoomId = null
+            chatRoomId = null,
+            maxCapacity = request.maxCapacity  // add this
         )
 
         val savedEvent = eventRepository.save(event)
@@ -68,19 +69,24 @@ class EventService(
         val event = eventRepository.findById(eventId)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found") }
 
-        val participantId = EventParticipantId(eventId = eventId, userId = user.id)
-
         if (eventParticipantRepository.existsByIdEventIdAndIdUserId(eventId, user.id)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "User is already enrolled in this event")
         }
 
+        // Capacity check
+        event.maxCapacity?.let { cap ->
+            val currentCount = eventParticipantRepository.countByIdEventId(eventId)
+            if (currentCount >= cap) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "Event is at full capacity ($cap/$cap)")
+            }
+        }
+
         val participant = EventParticipant(
-            id = participantId,
+            id = EventParticipantId(eventId = eventId, userId = user.id),
             event = event,
             user = user,
             enrolledAt = Instant.now()
         )
-
         eventParticipantRepository.save(participant)
     }
 
@@ -177,7 +183,8 @@ class EventService(
                 endAt = event.endAt,
                 creatorId = creator.id,
                 participantsCount = (countMap[event.id] ?: 0L).toInt(),
-                isParticipant = participatedIds.contains(event.id) // ✅ HERE
+                isParticipant = participatedIds.contains(event.id),
+                maxCapacity = event.maxCapacity  // add this
             )
         }
     }

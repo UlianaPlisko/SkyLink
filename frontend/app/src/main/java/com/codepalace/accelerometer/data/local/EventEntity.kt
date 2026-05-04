@@ -13,5 +13,6 @@ data class EventEntity(
     val endAt: String?,
     val creatorId: Long,
     val participantsCount: Int,
-    val isParticipant: Boolean
+    val isParticipant: Boolean,
+    val maxCapacity: Int?
 )

@@ -2,14 +2,22 @@ package com.codepalace.accelerometer.ui.activity
 
 import com.codepalace.accelerometer.R
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.codepalace.accelerometer.api.ApiClient
 import android.widget.ImageButton
+import androidx.annotation.RequiresApi
+import androidx.lifecycle.lifecycleScope
+import com.codepalace.accelerometer.data.local.AppDatabase
+import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
+import kotlinx.coroutines.launch
+
 class MenuActivity : AppCompatActivity() {
 
     private lateinit var btnBack: ImageButton
@@ -19,9 +27,18 @@ class MenuActivity : AppCompatActivity() {
     private lateinit var itemAuthentication: LinearLayout
     private lateinit var itemLogout: LinearLayout
 
+    private lateinit var eventRepository: EventRepository
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
+
+        val database = AppDatabase.getDatabase(this)
+        eventRepository = EventRepository(
+            api = ApiClient.eventApi,
+            database = database
+        )
         setContentView(R.layout.activity_menu)
 
         btnBack = findViewById(R.id.btnBack)
@@ -59,18 +76,40 @@ class MenuActivity : AppCompatActivity() {
         }
 
         itemLogout.setOnClickListener {
-            ApiClient.getSessionStorage().clearAuth()
-            showAppMessage("Logged out.", MessageKind.SUCCESS)
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+            handleLogout()
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun handleLogout() {
+        lifecycleScope.launch {                    // ← This is the fix
+            try {
+                eventRepository.clearEventsCache()   // Now safe to call
+
+                ApiClient.getSessionStorage().clearAuth()
+
+                showAppMessage("Logged out successfully.", MessageKind.SUCCESS)
+
+                // Go back to login screen and clear back stack
+                startActivity(Intent(this@MenuActivity, LoginActivity::class.java))
+                finishAffinity()   // Clears all previous activities
+
+            } catch (e: Exception) {
+                Log.e("Logout", "Error during logout", e)
+                showAppMessage("Logged out (with minor issue)", MessageKind.INFO)
+                startActivity(Intent(this@MenuActivity, LoginActivity::class.java))
+                finishAffinity()
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
         updateMenuUi()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun updateMenuUi() {
         val loggedIn = ApiClient.getSessionStorage().isLoggedIn()
 

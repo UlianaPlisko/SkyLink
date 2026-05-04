@@ -9,6 +9,6 @@ data class CreateEventRequest(
     val startAt: String,
     val endAt: String? = null,
     val location: String? = null,
-    val capacity: Int? = null,
+    val maxCapacity: Int? = null,
     val chatRoomName: String? = null   // only sent if switch is ON and name is filled
 )

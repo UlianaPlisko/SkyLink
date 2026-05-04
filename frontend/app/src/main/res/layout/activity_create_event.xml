@@ -208,7 +208,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Capacity"
+                android:text="Max Capacity (optional)"
                 android:textColor="@color/color_accent"
                 android:textSize="18sp"
                 android:fontFamily="serif"
@@ -218,11 +218,11 @@
                 android:id="@+id/etCapacity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter text"
-                android:textColor="@color/color_accent"
-                android:textColorHint="#80FFFFFF"
-                android:backgroundTint="@color/color_accent"
-                android:inputType="number" />
+                android:hint="Leave empty for unlimited"
+            android:textColor="@color/color_accent"
+            android:textColorHint="#80FFFFFF"
+            android:backgroundTint="@color/color_accent"
+            android:inputType="number" />
 
             <!-- Chat room toggle -->
             <LinearLayout

@@ -122,9 +122,10 @@
         android:textColor="@color/color_text_primary"
         android:textSize="16sp"
         android:fontFamily="serif"
-        android:alpha="0.0"
+        android:alpha="0.7"
         app:layout_constraintStart_toEndOf="@id/labelCapacity"
-        app:layout_constraintTop_toTopOf="@id/labelCapacity" />
+        app:layout_constraintTop_toTopOf="@id/labelCapacity"
+        android:layout_marginStart="8dp"/>
 
     <Button
         android:id="@+id/btnEnroll"

@@ -8,7 +8,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun EventResponse.toScheduledEvent(isParticipant: Boolean = false): ScheduledEvent {
+fun EventResponse.toScheduledEvent(): ScheduledEvent {
     val formatter = DateTimeFormatter.ofPattern("HH:mm")
     val start = startAt.atZone(ZoneId.systemDefault())
     val end = endAt?.atZone(ZoneId.systemDefault())
@@ -16,11 +16,12 @@ fun EventResponse.toScheduledEvent(isParticipant: Boolean = false): ScheduledEve
     return ScheduledEvent(
         id = id.toString(),
         name = title,
-        description = description ?: "",
+        description = description,
         location = eventType,
         startTime = start.format(formatter),
-        endTime = end?.format(formatter) ?: "",
-        capacity = participantsCount.toString(),
-        isEnrolled = isParticipant  // Now populated correctly
+        endTime = end?.format(formatter),
+        participantsCount = participantsCount,
+        isEnrolled = participant,          // ← now correctly mapped
+        maxCapacity = maxCapacity
     )
 }

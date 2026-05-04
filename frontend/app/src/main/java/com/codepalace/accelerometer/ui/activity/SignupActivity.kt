@@ -16,8 +16,10 @@ import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.auth.GoogleSignInCoordinator
+import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.model.enums.UserRole
 import com.codepalace.accelerometer.data.repository.AuthRepository
+import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.notification.MyFirebaseMessagingService
 import com.codepalace.accelerometer.notification.MyFirebaseMessagingService.Companion.sendSavedTokenIfExists
 import com.codepalace.accelerometer.ui.MessageKind
@@ -31,10 +33,18 @@ class SignupActivity : AppCompatActivity() {
     private val authRepository = AuthRepository()
     private lateinit var googleSignInCoordinator: GoogleSignInCoordinator
 
+    private lateinit var eventRepository: EventRepository
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
+
+        val database = AppDatabase.getDatabase(this)
+        eventRepository = EventRepository(
+            api = ApiClient.eventApi,
+            database = database
+        )
         setContentView(R.layout.activity_signup)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
@@ -123,6 +133,8 @@ class SignupActivity : AppCompatActivity() {
                 )
 
                 sendSavedTokenIfExists(this@SignupActivity)
+
+                eventRepository.clearEventsCache()
 
                 showAppMessage("Account created successfully.", MessageKind.SUCCESS)
                 startActivity(Intent(this@SignupActivity, MainActivity::class.java))

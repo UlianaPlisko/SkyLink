@@ -48,6 +48,10 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
         loadEvents()
     }
 
+    suspend fun syncPendingEventActions() {
+        repository.syncPendingEventActions()
+    }
+
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
         updateWeekDays()
@@ -106,11 +110,31 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun enroll(eventId: Long) {
         repository.enroll(eventId)
-        loadEvents()
+        updateEventOptimistically(eventId, isEnrolled = true)   // ← instant UI
     }
 
     suspend fun signOut(eventId: Long) {
         repository.signOut(eventId)
-        loadEvents()
+        updateEventOptimistically(eventId, isEnrolled = false)  // ← instant UI
+    }
+
+    private fun updateEventOptimistically(eventId: Long, isEnrolled: Boolean) {
+        val currentList = _scheduledEvents.value
+        val updatedList = currentList.map { event ->
+            if (event.id.toLong() == eventId) {
+                val newCount = if (isEnrolled) {
+                    event.participantsCount + 1
+                } else {
+                    (event.participantsCount - 1).coerceAtLeast(0)
+                }
+                event.copy(
+                    isEnrolled = isEnrolled,
+                    participantsCount = newCount
+                )
+            } else {
+                event
+            }
+        }
+        _scheduledEvents.value = updatedList
     }
 }

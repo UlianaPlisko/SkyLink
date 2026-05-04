@@ -15,7 +15,9 @@ import com.codepalace.accelerometer.R
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.ApiErrorMapper
 import com.codepalace.accelerometer.auth.GoogleSignInCoordinator
+import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.repository.AuthRepository
+import com.codepalace.accelerometer.data.repository.EventRepository
 import com.codepalace.accelerometer.notification.MyFirebaseMessagingService
 import com.codepalace.accelerometer.notification.MyFirebaseMessagingService.Companion.sendSavedTokenIfExists
 import com.codepalace.accelerometer.ui.MessageKind
@@ -27,12 +29,19 @@ import java.io.IOException
 class LoginActivity : AppCompatActivity() {
 
     private val authRepository = AuthRepository()
+
+    private lateinit var eventRepository: EventRepository
     private lateinit var googleSignInCoordinator: GoogleSignInCoordinator
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ApiClient.init(this)
+        val database = AppDatabase.getDatabase(this)
+        eventRepository = EventRepository(
+            api = ApiClient.eventApi,
+            database = database
+        )
         setContentView(R.layout.activity_login)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
@@ -83,7 +92,10 @@ class LoginActivity : AppCompatActivity() {
 
                 sendSavedTokenIfExists(this@LoginActivity)
 
+                eventRepository.clearEventsCache()
+
                 showAppMessage("Welcome back, ${response.displayName}.", MessageKind.SUCCESS)
+
                 startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                 finishAffinity()
 

@@ -12,5 +12,6 @@ data class CreateEventRequest(
     @field:Future val startAt: Instant,
     val endAt: Instant?,
     val visibilityGeom: String? = null,
-    val locationGeom: String? = null
+    val locationGeom: String? = null,
+    val maxCapacity: Int? = null
 )

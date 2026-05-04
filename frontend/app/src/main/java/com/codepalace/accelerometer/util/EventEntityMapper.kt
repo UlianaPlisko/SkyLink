@@ -16,7 +16,8 @@ fun EventResponse.toEntity() = EventEntity(
     endAt = endAt?.toString(),
     creatorId = creatorId,
     participantsCount = participantsCount,
-    isParticipant = participant
+    isParticipant = participant,     // ← match JSON field
+    maxCapacity = maxCapacity
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -30,8 +31,8 @@ fun EventEntity.toDomain(): ScheduledEvent {
         endAt = endAt?.let { Instant.parse(it) },
         creatorId = creatorId,
         participantsCount = participantsCount,
-        participant = isParticipant   // ✅ IMPORTANT
+        participant = isParticipant,     // ← correct mapping
+        maxCapacity = maxCapacity
     )
-
-    return eventResponse.toScheduledEvent(isParticipant)
+    return eventResponse.toScheduledEvent()
 }

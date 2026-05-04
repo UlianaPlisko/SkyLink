@@ -1,5 +1,8 @@
 package com.codepalace.accelerometer.ui.activity
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -101,7 +104,15 @@ class CalendarActivity : AppCompatActivity() {
         val role = ApiClient.getSessionStorage().getRole()
         btnCreateEvent.visibility = if (role == "CONTRIBUTOR") View.VISIBLE else View.GONE
         btnCreateEvent.setOnClickListener {
-            startActivity(Intent(this, CreateEventActivity::class.java))
+            if (isOnline()) {
+                startActivity(Intent(this, CreateEventActivity::class.java))
+            } else {
+                showAppMessage(
+                    "Creating events requires a connection to the stars ✨\n" +
+                            "Please go online to share your celestial gathering!",
+                    MessageKind.INFO
+                )
+            }
         }
 
         // ← NEW: Handle deep link from notification
@@ -115,6 +126,10 @@ class CalendarActivity : AppCompatActivity() {
                     .replaceFirstChar { it.uppercase() }
                 tvScheduledTitle.text = "Scheduled for ${formatMonthDay(selectedDate)}"
             }
+        }
+
+        lifecycleScope.launch {
+            viewModel.syncPendingEventActions()   // sync on app start
         }
 
         lifecycleScope.launch {
@@ -201,18 +216,55 @@ class CalendarActivity : AppCompatActivity() {
 
     private fun handleEnroll(event: ScheduledEvent) {
         lifecycleScope.launch {
+            val wasOnline = isOnline()
+
             try {
                 if (event.isEnrolled) {
                     viewModel.signOut(event.id.toLong())
                     showAppMessage("You have signed out.", MessageKind.SUCCESS)
                 } else {
+                    // ENROLL
                     viewModel.enroll(event.id.toLong())
-                    showAppMessage("Successfully enrolled.", MessageKind.SUCCESS)
+
+                    if (wasOnline) {
+                        showAppMessage("Successfully enrolled.", MessageKind.SUCCESS)
+                    } else {
+                        if (event.maxCapacity != null) {
+                            showAppMessage(
+                                "Enrolled (offline). Limited spots — your place is not guaranteed until you're back online.",
+                                MessageKind.INFO
+                            )
+                        } else {
+                            showAppMessage("Successfully enrolled.", MessageKind.INFO)
+                        }
+                    }
                 }
+
+                // Optional: sync in background
+                viewModel.syncPendingEventActions()
+
             } catch (e: retrofit2.HttpException) {
                 showAppMessage("Action failed. Please try again.", MessageKind.ERROR)
-            } catch (e: java.io.IOException) {
-                showAppMessage("You are offline. Try again later.", MessageKind.INFO)
+            } catch (e: Exception) {
+                showAppMessage("Something went wrong. Please try again.", MessageKind.ERROR)
+            }
+        }
+    }
+
+    private fun isOnline(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            try {
+                viewModel.syncPendingEventActions()
+            } catch (e: Exception) {
+                Log.e("CalendarActivity", "Sync pending actions failed", e)
             }
         }
     }
