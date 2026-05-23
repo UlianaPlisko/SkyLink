@@ -244,7 +244,11 @@ class CalendarActivity : AppCompatActivity() {
                 viewModel.syncPendingEventActions()
 
             } catch (e: retrofit2.HttpException) {
-                showAppMessage("Action failed. Please try again.", MessageKind.ERROR)
+                if (e.code() == 409) {
+                    showAppMessage("Event is at full capacity. Cannot join.", MessageKind.ERROR)
+                } else {
+                    showAppMessage("Action failed. Please try again.", MessageKind.ERROR)
+                }
             } catch (e: Exception) {
                 showAppMessage("Something went wrong. Please try again.", MessageKind.ERROR)
             }

@@ -113,9 +113,13 @@ class EventRepository(
                         // Server says full or already enrolled → revert local state
                         revertLocalEnrollment(pending.eventId)
                         Log.d("EventRepository", "Reverted enrollment for event ${pending.eventId} (capacity full)")
+                        eventDao.deletePendingAction(pending.id)
+                        throw e
+                    } else if (e is retrofit2.HttpException) {
+                        eventDao.deletePendingAction(pending.id)
+                    } else {
+                        Log.w("EventRepository", "⚠️ Network error - keeping pending ${pending.action} for retry")
                     }
-                    // We still delete the pending action so we don't retry forever
-                    eventDao.deletePendingAction(pending.id)
                 }
             }
         }

@@ -6,6 +6,8 @@ class AppSettingsStorage(context: Context) {
 
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
 
+    private val KEY_LOCATION_NAME = "location_name"
+
     var notificationsEnabled: Boolean
         get() = prefs.getBoolean(KEY_NOTIFICATIONS, false)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFICATIONS, value).apply()
@@ -21,6 +23,10 @@ class AppSettingsStorage(context: Context) {
     var autoLocationEnabled: Boolean
         get() = prefs.getBoolean(KEY_AUTO_LOCATION, true)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_LOCATION, value).apply()
+
+    var locationName: String
+        get() = prefs.getString(KEY_LOCATION_NAME, DEFAULT_LOCATION_NAME) ?: DEFAULT_LOCATION_NAME
+        set(value) = prefs.edit().putString(KEY_LOCATION_NAME, value).apply()
 
     var latitude: String
         get() = coordinateTextOrDefault(
@@ -53,6 +59,7 @@ class AppSettingsStorage(context: Context) {
             .putBoolean(KEY_AUTO_LOCATION, false)
             .putString(KEY_LATITUDE, DEFAULT_LATITUDE_TEXT)
             .putString(KEY_LONGITUDE, DEFAULT_LONGITUDE_TEXT)
+            .putString(KEY_LOCATION_NAME, DEFAULT_LOCATION_NAME)
             .apply()
     }
 

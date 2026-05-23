@@ -20,6 +20,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Top Bar with Menu, Time, Search -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
@@ -67,7 +68,7 @@
             app:tint="@color/color_accent" />
     </LinearLayout>
 
-    <!-- Bottom left chat -->
+    <!-- Bottom Left Chat Button -->
     <ImageButton
         android:id="@+id/btnChat"
         android:layout_width="56dp"
@@ -82,7 +83,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Bottom right calendar -->
+    <!-- Bottom Right Calendar Button -->
     <ImageButton
         android:id="@+id/btnCalendar"
         android:layout_width="56dp"
@@ -97,8 +98,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Compass -->
-    <!-- Compass -->
+    <!-- Bottom Center Compass -->
     <LinearLayout
         android:id="@+id/compassContainer"
         android:layout_width="220dp"
@@ -135,7 +135,7 @@
             android:textSize="10sp" />
     </LinearLayout>
 
-    <!-- Loading overlay -->
+    <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="0dp"
@@ -156,6 +156,127 @@
             android:layout_height="match_parent" />
     </FrameLayout>
 
+    <!-- WEATHER OVERLAY - Full Screen (appears first, then shrinks to widget) -->
+    <FrameLayout
+        android:id="@+id/weatherOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#BB000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/weatherMessageContainer"
+            android:layout_width="260dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_card_menu"
+            android:padding="18dp">
+
+            <TextView
+                android:id="@+id/tvWeatherMain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear Night Sky in Bratislava"
+                android:textColor="@color/color_accent"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/tvWeatherSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Perfect conditions for stargazing. Visibility is excellent."
+                android:textColor="@color/color_text_primary"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:layout_marginBottom="12dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
+
+            <ProgressBar
+                android:id="@+id/weatherLoadingSpinner"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:visibility="gone"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/color_accent" />
+
+            <TextView
+                android:id="@+id/tvWeatherEmoji"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- WEATHER WIDGET - Small (right side, above calendar button) -->
+    <LinearLayout
+        android:id="@+id/weatherWidgetSmall"
+        android:layout_width="60dp"
+        android:layout_height="55dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_card_menu"
+        android:padding="10dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="200dp"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tvWeatherStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@color/color_accent"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cloud"
+            android:textColor="@color/color_text_primary"
+            android:textSize="9sp"
+            android:gravity="center"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/tvWeatherLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear • night"
+            android:textColor="@color/color_text_primary"
+            android:textSize="8sp"
+            android:gravity="center"
+            android:layout_marginTop="1dp" />
+
+        <TextView
+            android:id="@+id/tvWeatherEmoji2"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Star Preview Panel (bottom left) -->
     <LinearLayout
         android:id="@+id/starPreviewPanel"
         android:layout_width="0dp"
@@ -192,9 +313,8 @@
             android:textSize="14sp" />
     </LinearLayout>
 
+    <!-- Search Overlay -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/searchOverlay"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -205,7 +325,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- ── Search bar row ── -->
+        <!-- Search Bar Row -->
         <LinearLayout
             android:id="@+id/searchBarRow"
             android:layout_width="0dp"
@@ -261,7 +381,7 @@
 
         </LinearLayout>
 
-        <!-- ── Results panel — anchored below the search bar, fills bottom half ── -->
+        <!-- Search Results Panel -->
         <LinearLayout
             android:id="@+id/searchResultsPanel"
             android:layout_width="0dp"
@@ -269,11 +389,9 @@
             android:orientation="vertical"
             android:background="@color/color_sky_background"
             android:paddingTop="4dp"
-
             app:layout_constraintTop_toBottomOf="@id/searchBarRow"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-
             app:layout_constraintHeight_percent="0.4">
 
             <TextView

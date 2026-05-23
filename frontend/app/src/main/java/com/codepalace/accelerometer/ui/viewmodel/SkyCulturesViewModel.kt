@@ -1,7 +1,9 @@
 package com.codepalace.accelerometer.ui.viewmodel
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.codepalace.accelerometer.api.ApiClient
@@ -16,8 +18,10 @@ class SkyCulturesViewModel(application: Application) : AndroidViewModel(applicat
 
     private val TAG = "SkyCultureVM"
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val repository = CelestialRepository(
         api = ApiClient.celestialApi,
+        weatherApi = ApiClient.weatherApi,
         database = AppDatabase.getDatabase(application)
     )
 
@@ -27,6 +31,7 @@ class SkyCulturesViewModel(application: Application) : AndroidViewModel(applicat
     private val _expandedId = MutableStateFlow<Long?>(null)
     val expandedId: StateFlow<Long?> = _expandedId
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun loadCultures() {
         viewModelScope.launch {
             Log.d(TAG, "📡 Loading cultures...")
@@ -54,6 +59,7 @@ class SkyCulturesViewModel(application: Application) : AndroidViewModel(applicat
         _expandedId.value = newValue
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun setCurrentCulture(id: Long) {
         viewModelScope.launch {
             Log.d(TAG, "🌍 Setting current culture: $id")

@@ -1,18 +1,26 @@
 package com.codepalace.accelerometer.data.repository
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
+import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.api.CelestialApi
+import com.codepalace.accelerometer.api.WeatherApi
 import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.SpaceObjectDetailEntity
 import com.codepalace.accelerometer.data.local.SpaceObjectEntity
 import com.codepalace.accelerometer.data.model.SpaceObjectDetail
 import com.codepalace.accelerometer.data.model.SpaceObjectSummary   // your Retrofit model
 import com.codepalace.accelerometer.data.model.dto.ConstellationCultureResponse
+import com.codepalace.accelerometer.data.model.dto.CurrentVisibilityResponse
 import com.codepalace.accelerometer.data.model.dto.WikiResponse
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class CelestialRepository(
     private val api: CelestialApi,
+    private val weatherApi: WeatherApi,
     private val database: AppDatabase
 ) {
 
@@ -80,6 +88,22 @@ class CelestialRepository(
 
     suspend fun setCurrentCulture(id: Long) {
         api.setCurrentCulture(id)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun getWeatherVisibility(location: String): CurrentVisibilityResponse {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = ApiClient.weatherApi.getCurrentVisibility(
+                    mapOf("location" to location)
+                )
+                Log.d("CelestialRepository", "✅ Weather fetched: ${response.visibilityKm}")
+                response
+            } catch (e: Exception) {
+                Log.e("CelestialRepository", "❌ Weather API error: ${e.message}", e)
+                throw e
+            }
+        }
     }
 
     private fun SpaceObjectSummary.toEntity() = SpaceObjectEntity(

@@ -88,6 +88,10 @@ object ApiClient {
         authRetrofit.create(EventApi::class.java)
     }
 
+    val weatherApi: WeatherApi by lazy {
+        publicRetrofit.create(WeatherApi::class.java)
+    }
+
     val chatApi: ChatApi by lazy { authRetrofit.create(ChatApi::class.java) }
 
     fun getSessionStorage(): SessionStorage = sessionStorage

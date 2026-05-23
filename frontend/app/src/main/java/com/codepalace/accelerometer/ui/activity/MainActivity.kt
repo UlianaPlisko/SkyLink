@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.FrameLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -38,6 +39,7 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -45,11 +47,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codepalace.accelerometer.api.ApiClient
 import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.model.Star
+import com.codepalace.accelerometer.data.model.dto.CurrentVisibilityResponse
 import com.codepalace.accelerometer.sensors.CompassController
 import com.codepalace.accelerometer.ui.view.HalfCompassView
 import com.codepalace.accelerometer.ui.MessageKind
 import com.codepalace.accelerometer.ui.showAppMessage
 import com.codepalace.accelerometer.util.SearchResultAdapter
+import kotlinx.coroutines.flow.combine
 
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
@@ -79,6 +83,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var starPreviewPanel: LinearLayout
     private lateinit var tvPreviewName: TextView
     private lateinit var tvPreviewType: TextView
+
+    private lateinit var weatherOverlay: FrameLayout
+    private lateinit var weatherMessageContainer: LinearLayout
+    private lateinit var tvWeatherEmoji: TextView
+    private lateinit var tvWeatherMain: TextView
+    private lateinit var tvWeatherSub: TextView
+    private lateinit var weatherLoadingSpinner: ProgressBar
+
+    private lateinit var weatherWidgetSmall: LinearLayout
+    private lateinit var tvWeatherEmoji2: TextView
+    private lateinit var tvWeatherStatus: TextView
+    private lateinit var tvWeatherLocation: TextView
+
+    private var weatherWidgetDismissed = false
 
     private var selectedStar: Star? = null
     private var locationFallbackMessageShown = false
@@ -158,6 +176,28 @@ class MainActivity : AppCompatActivity() {
         btnSearchClear   = findViewById(R.id.btnSearchClear)
         rvSearchResults  = findViewById(R.id.rvSearchResults)
         tvSearchEmpty    = findViewById(R.id.tvSearchEmpty)
+
+        weatherOverlay = findViewById(R.id.weatherOverlay)
+        weatherMessageContainer = findViewById(R.id.weatherMessageContainer)
+        tvWeatherEmoji = findViewById(R.id.tvWeatherEmoji)
+        tvWeatherMain = findViewById(R.id.tvWeatherMain)
+        tvWeatherSub = findViewById(R.id.tvWeatherSub)
+        weatherLoadingSpinner = findViewById(R.id.weatherLoadingSpinner)
+
+        weatherWidgetSmall = findViewById(R.id.weatherWidgetSmall)
+        tvWeatherEmoji2 = findViewById(R.id.tvWeatherEmoji2)
+        tvWeatherStatus = findViewById(R.id.tvWeatherStatus)
+        tvWeatherLocation = findViewById(R.id.tvWeatherLocation)
+
+        weatherOverlay.setOnClickListener {
+            dismissWeatherOverlay()
+        }
+
+        weatherWidgetSmall.setOnClickListener {
+            if (!weatherOverlay.isVisible) {
+                showWeatherOverlay()
+            }
+        }
 
         // Adapter
         searchAdapter = SearchResultAdapter { result ->
@@ -300,6 +340,9 @@ class MainActivity : AppCompatActivity() {
             if (!starPreviewPanel.isVisible) {
                 starPreviewPanel.visibility = View.VISIBLE
                 starPreviewPanel.bringToFront()
+                starPreviewPanel.isClickable = true
+                tvPreviewName.isClickable = true
+                tvPreviewType.isClickable = true
                 starPreviewPanel.startAnimation(
                     android.view.animation.AnimationUtils.loadAnimation(
                         this,
@@ -378,6 +421,24 @@ class MainActivity : AppCompatActivity() {
                         tvSearchEmpty.isVisible   = results.isEmpty() && hasQuery
                     }
                 }
+
+                launch {
+                    viewModel.shouldShowWeather.combine(viewModel.isLoading) { shouldShow, isLoading ->
+                        shouldShow && !isLoading && !weatherWidgetDismissed
+                    }.collect { shouldShowNow ->
+                        if (shouldShowNow) {
+                            showWeatherOverlay()
+                        }
+                    }
+                }
+
+                launch {
+                    viewModel.weatherData.collect { data ->
+                        if (data != null) {
+                            updateWeatherUI(data)
+                        }
+                    }
+                }
             }
         }
 
@@ -401,6 +462,13 @@ class MainActivity : AppCompatActivity() {
 
         updateCurrentTime()
         timeHandler.post(timeRunnable)
+
+        val locationName = settingsStorage.locationName
+        viewModel.fetchWeatherForLocation(locationName)
+
+        starPreviewPanel.isClickable = true
+        tvPreviewName.isClickable = true
+        tvPreviewType.isClickable = true
     }
 
     override fun onPause() {
@@ -658,5 +726,144 @@ class MainActivity : AppCompatActivity() {
 
     private fun Int.dp(): Int {
         return (this * resources.displayMetrics.density).toInt()
+    }
+
+    private fun updateWeatherUI(data: CurrentVisibilityResponse) {
+        // Get the condition description with day/night context
+        val conditionDescription = getConditionDescription(data.conditionCode, data.isDay)
+        val dayNightText = if (data.isDay) "daytime" else "night"
+
+        // Full overlay messages - more beautiful and descriptive
+        val mainMessage = when {
+            data.conditionCode == 1000 && !data.isDay ->
+                "Clear Night Sky in ${data.location}"
+            data.conditionCode == 1000 && data.isDay ->
+                "Clear Day in ${data.location}"
+            data.conditionCode in 1003..1009 && !data.isDay ->
+                "Partly Cloudy Night in ${data.location}"
+            data.conditionCode in 1003..1009 && data.isDay ->
+                "Partly Cloudy Day in ${data.location}"
+            data.conditionCode in 1030..1135 && !data.isDay ->
+                "Cloudy Night in ${data.location}"
+            data.conditionCode in 1030..1135 && data.isDay ->
+                "Cloudy Day in ${data.location}"
+            data.conditionCode in 1150..1225 && !data.isDay ->
+                "Rainy Night in ${data.location}"
+            data.conditionCode in 1150..1225 && data.isDay ->
+                "Rainy Day in ${data.location}"
+            else -> "${data.conditionText} in ${data.location}"
+        }
+
+        // Secondary message with advice about stargazing
+        val secondaryMessage = when {
+            data.conditionCode == 1000 && !data.isDay ->
+                "Perfect conditions for stargazing. Visibility is excellent with ${data.visibilityKm.toInt()}km range."
+            data.conditionCode == 1000 && data.isDay ->
+                "Beautiful day ahead. Return when night falls to observe the stars."
+            data.conditionCode in 1003..1009 && !data.isDay ->
+                "Light clouds at night. Stargazing is still possible with ${data.visibilityKm.toInt()}km visibility."
+            data.conditionCode in 1003..1009 && data.isDay ->
+                "Partly cloudy conditions today. Wait for tonight to check the stars."
+            data.conditionCode in 1030..1135 && !data.isDay ->
+                "Cloudy conditions reduce visibility to ${data.visibilityKm.toInt()}km. Stargazing may be challenging."
+            data.conditionCode in 1030..1135 && data.isDay ->
+                "Overcast day ahead. Conditions may improve by evening for stargazing."
+            data.conditionCode in 1150..1225 && !data.isDay ->
+                "Rain tonight limits visibility to ${data.visibilityKm.toInt()}km. Check back later for stargazing."
+            data.conditionCode in 1150..1225 && data.isDay ->
+                "Rainy conditions. Better conditions may return for evening stargazing."
+            else -> "Current visibility is ${data.visibilityKm.toInt()}km. Check back soon."
+        }
+
+        // Update full overlay - NO EMOJI
+        tvWeatherEmoji.text = ""
+        tvWeatherMain.text = mainMessage
+        tvWeatherSub.text = secondaryMessage
+
+        // Update small widget - show cloud percentage instead of emoji
+        tvWeatherEmoji2.text = ""
+        tvWeatherStatus.text = "${data.cloudPercent}%"  // Show percentage
+        tvWeatherLocation.text = "${data.conditionText.lowercase()} • ${if (data.isDay) "day" else "night"}"
+    }
+
+    private fun getConditionDescription(conditionCode: Int, isDay: Boolean): String {
+        return when {
+            conditionCode == 1000 -> if (isDay) "Clear and sunny" else "Clear and starry"
+            conditionCode in 1003..1009 -> "Partly cloudy"
+            conditionCode in 1030..1135 -> "Cloudy"
+            conditionCode in 1150..1225 -> "Rainy"
+            else -> "Unknown condition"
+        }
+    }
+
+    private fun showWeatherOverlay() {
+        weatherOverlay.isVisible = true
+        weatherOverlay.alpha = 0f          // Start invisible
+        weatherOverlay.bringToFront()
+
+        weatherMessageContainer.apply {
+            alpha = 0f
+            scaleX = 0.85f
+            scaleY = 0.85f
+        }
+
+        // Animate both overlay and card together
+        weatherOverlay.animate()
+            .alpha(1f)
+            .setDuration(350)
+            .start()
+
+        weatherMessageContainer.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(400)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .withStartAction {
+                weatherLoadingSpinner.isVisible = false
+            }
+            .start()
+
+        // Auto dismiss after 4 seconds
+        weatherMessageContainer.postDelayed({
+            if (weatherOverlay.isVisible && !weatherWidgetDismissed) {
+                dismissWeatherOverlay()
+            }
+        }, 4000)
+    }
+
+    private fun dismissWeatherOverlay() {
+        weatherWidgetDismissed = true
+
+        // Animate both together for smooth exit
+        weatherMessageContainer.animate()
+            .alpha(0f)
+            .scaleX(0.85f)
+            .scaleY(0.85f)
+            .setDuration(320)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                weatherOverlay.isVisible = false
+                showWeatherWidget()           // Show small widget after
+            }
+            .start()
+
+        weatherOverlay.animate()
+            .alpha(0f)
+            .setDuration(320)
+            .start()
+    }
+
+    private fun showWeatherWidget() {
+        weatherWidgetSmall.isVisible = true
+        weatherWidgetSmall.alpha = 0f
+        weatherWidgetSmall.translationX = 200f
+
+        weatherWidgetSmall.animate()
+            .alpha(1f)
+            .translationX(0f)
+            .setDuration(400)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
     }
 }

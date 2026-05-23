@@ -11,6 +11,7 @@ import com.codepalace.accelerometer.data.local.AppDatabase
 import com.codepalace.accelerometer.data.local.AppSettingsStorage
 import com.codepalace.accelerometer.data.local.SpaceObjectEntity
 import com.codepalace.accelerometer.data.model.Star
+import com.codepalace.accelerometer.data.model.dto.CurrentVisibilityResponse
 import com.codepalace.accelerometer.data.repository.CelestialRepository
 import com.codepalace.accelerometer.util.CelestialConverter
 import com.codepalace.accelerometer.util.SearchManager
@@ -30,8 +31,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = CelestialRepository(
         api = ApiClient.celestialApi,
+        weatherApi = ApiClient.weatherApi,
         database = AppDatabase.getDatabase(application)
     )
+
+    private val _weatherData = MutableStateFlow<CurrentVisibilityResponse?>(null)
+    val weatherData: StateFlow<CurrentVisibilityResponse?> = _weatherData.asStateFlow()
+
+    private val _shouldShowWeather = MutableStateFlow(false)
+    val shouldShowWeather: StateFlow<Boolean> = _shouldShowWeather.asStateFlow()
 
     private val _stars = MutableStateFlow<List<Star>>(emptyList())
     val stars: StateFlow<List<Star>> = _stars.asStateFlow()
@@ -135,6 +143,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _stars.value = projected
         Log.d(TAG, "✅ Projected ${projected.size} visible stars (mag ≤ $displayMaxMagnitude)")
+    }
+
+    /**
+     * Fetches weather data for the given location from the weather API
+     * @param location Location name (e.g., "Bratislava" or "Paris")
+     */
+    fun fetchWeatherForLocation(location: String) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "🌤️ Fetching weather for location: $location")
+                val result = repository.getWeatherVisibility(location)
+                _weatherData.value = result
+                _shouldShowWeather.value = true
+                Log.d(TAG, "✅ Weather fetched: ${result.visibilityKm} in ${result.location}, isDay: ${result.isDay}")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Weather fetch failed: ${e.message}", e)
+                _shouldShowWeather.value = false
+                _weatherData.value = null
+            }
+        }
     }
 
     fun setMaxMagnitude(maxMag: Double) {

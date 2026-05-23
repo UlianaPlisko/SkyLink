@@ -1,7 +1,9 @@
 package com.codepalace.accelerometer.ui.viewmodel
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.codepalace.accelerometer.api.ApiClient
@@ -17,8 +19,10 @@ class StarDetailViewModel(application: Application) : AndroidViewModel(applicati
 
     private val TAG = "StarDetailViewModel"
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val repository = CelestialRepository(
         api = ApiClient.celestialApi,
+        weatherApi = ApiClient.weatherApi,
         database = AppDatabase.getDatabase(application)
     )
 
@@ -34,6 +38,7 @@ class StarDetailViewModel(application: Application) : AndroidViewModel(applicati
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun loadDetail(id: Long) {
         viewModelScope.launch {
             _isLoading.value = true
