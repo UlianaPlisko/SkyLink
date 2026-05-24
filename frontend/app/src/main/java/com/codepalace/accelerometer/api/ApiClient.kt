@@ -3,6 +3,7 @@ package com.codepalace.accelerometer.api
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import com.codepalace.accelerometer.config.ApiConfig
 import com.codepalace.accelerometer.data.local.SessionStorage
 import com.codepalace.accelerometer.util.InstantTypeAdapter
@@ -17,9 +18,17 @@ import java.util.concurrent.TimeUnit
 
 @RequiresApi(Build.VERSION_CODES.O)
 object ApiClient {
-    private const val BASE_URL = ApiConfig.BASE_URL
 
     private lateinit var sessionStorage: SessionStorage
+
+    @Volatile
+    private var baseUrlOverride: String? = null
+
+    @Volatile
+    private var publicRetrofit: Retrofit? = null
+
+    @Volatile
+    private var authRetrofit: Retrofit? = null
 
     fun init(context: Context) {
         sessionStorage = SessionStorage(context.applicationContext)
@@ -52,47 +61,65 @@ object ApiClient {
             .create()
     }
 
-    private val publicRetrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+    private fun publicRetrofit(): Retrofit {
+        publicRetrofit?.let { return it }
+        return synchronized(this) {
+            publicRetrofit ?: createPublicRetrofit().also { publicRetrofit = it }
+        }
+    }
+
+    private fun authRetrofit(): Retrofit {
+        authRetrofit?.let { return it }
+        return synchronized(this) {
+            authRetrofit ?: createAuthRetrofit().also { authRetrofit = it }
+        }
+    }
+
+    private fun createPublicRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(currentBaseUrl())
             .client(publicOkHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(gson))  // ← use custom gson
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
-    private val authRetrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+    private fun createAuthRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(currentBaseUrl())
             .client(authOkHttpClient)
-            .addConverterFactory(GsonConverterFactory.create(gson))  // ← use custom gson
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
-    val celestialApi: CelestialApi by lazy {
-        publicRetrofit.create(CelestialApi::class.java)
+    private fun currentBaseUrl(): String = baseUrlOverride ?: ApiConfig.BASE_URL
+
+    @VisibleForTesting
+    fun overrideBaseUrlForTests(baseUrl: String?) {
+        baseUrlOverride = baseUrl?.let { if (it.endsWith("/")) it else "$it/" }
+        publicRetrofit = null
+        authRetrofit = null
     }
 
-    val authApi: AuthApi by lazy {
-        publicRetrofit.create(AuthApi::class.java)
-    }
+    val celestialApi: CelestialApi
+        get() = publicRetrofit().create(CelestialApi::class.java)
 
-    val profileApi: ProfileApi by lazy {
-        authRetrofit.create(ProfileApi::class.java)
-    }
+    val authApi: AuthApi
+        get() = publicRetrofit().create(AuthApi::class.java)
 
-    val favoriteApi: FavoriteApi by lazy {
-        authRetrofit.create(FavoriteApi::class.java)
-    }
+    val profileApi: ProfileApi
+        get() = authRetrofit().create(ProfileApi::class.java)
 
-    val eventApi: EventApi by lazy {
-        authRetrofit.create(EventApi::class.java)
-    }
+    val favoriteApi: FavoriteApi
+        get() = authRetrofit().create(FavoriteApi::class.java)
 
-    val weatherApi: WeatherApi by lazy {
-        publicRetrofit.create(WeatherApi::class.java)
-    }
+    val eventApi: EventApi
+        get() = authRetrofit().create(EventApi::class.java)
 
-    val chatApi: ChatApi by lazy { authRetrofit.create(ChatApi::class.java) }
+    val weatherApi: WeatherApi
+        get() = publicRetrofit().create(WeatherApi::class.java)
+
+    val chatApi: ChatApi
+        get() = authRetrofit().create(ChatApi::class.java)
 
     fun getSessionStorage(): SessionStorage = sessionStorage
 }
