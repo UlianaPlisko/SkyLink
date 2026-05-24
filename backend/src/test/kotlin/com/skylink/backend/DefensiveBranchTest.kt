@@ -55,10 +55,10 @@ import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.Optional
 
-class CoverageEdgeCaseTest {
+class DefensiveBranchTest {
 
     @Test
-    fun `celestial service covers defensive null display names without changing production code`() {
+    fun `celestial service uses fallback display names for incomplete objects`() {
         val spaceObjectRepository: SpaceObjectRepository = mock()
         val starDataRepository: StarDataRepository = mock()
         val planetDataRepository: PlanetDataRepository = mock()
@@ -96,7 +96,7 @@ class CoverageEdgeCaseTest {
     }
 
     @Test
-    fun `celestial service covers defensive wiki summary fallback branches`() {
+    fun `celestial service skips wiki details when summary data is incomplete`() {
         val spaceObjectRepository: SpaceObjectRepository = mock()
         val wikipediaService: WikipediaService = mock()
         val service = CelestialService(
@@ -135,7 +135,7 @@ class CoverageEdgeCaseTest {
     }
 
     @Test
-    fun `chat room service covers event request branches after validation`() {
+    fun `chat room service keeps event data consistent for create and update requests`() {
         val chatRoomRepository: ChatRoomRepository = mock()
         val userRepository: UserRepository = mock()
         val subscriptionRepository: UserChatSubscriptionRepository = mock()
@@ -173,7 +173,7 @@ class CoverageEdgeCaseTest {
     }
 
     @Test
-    fun `favorite service covers defensive null display name mapping`() {
+    fun `favorite service maps incomplete saved objects with fallback display names`() {
         val favoriteRepository: FavoriteRepository = mock()
         val service = FavoriteService(
             favoriteRepository,
@@ -193,7 +193,7 @@ class CoverageEdgeCaseTest {
     }
 
     @Test
-    fun `profile picture upload covers missing content type with a mocked multipart file`() {
+    fun `profile picture upload rejects files without a content type`() {
         val userRepository: UserRepository = mock()
         val service = UserProfileService(userRepository, mock())
         val file = mock<MultipartFile>()
@@ -208,7 +208,7 @@ class CoverageEdgeCaseTest {
     }
 
     @Test
-    fun `websocket auth covers null token branch through direct handler invocation`() {
+    fun `websocket auth rejects authentication messages without a token`() {
         val objectMapper: ObjectMapper = mock()
         val handler = ChatWebSocketHandler(
             objectMapper,
